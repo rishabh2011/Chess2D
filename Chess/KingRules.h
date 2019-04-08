@@ -1,3 +1,6 @@
+/* -------------------------------------------------------------------------------------------------------------------
+  Universal rules functions have been commented in pawn rules class. Only piece specific rules commented in this class
+  -------------------------------------------------------------------------------------------------------------------- */
 #ifndef KINGTRULES_H
 #define KINGTRULES_H
 
@@ -11,7 +14,7 @@ class KingRules
 {
 public:
 
-	bool squareUnderAttack(glm::vec2 &targetSquare, bool isWhite)
+	bool attackingSquare(glm::vec2 &targetSquare, bool isWhite)
 	{
 		if (insideBoard(targetSquare))
 		{
@@ -67,6 +70,8 @@ public:
 		return true;
 	}
 
+	//Functions checks if the target square is safe for the king to move to 
+	//i.e. the target square is not being attacked by an opponent piece
 	bool squareSafe(const glm::vec2 &targetSquare)
 	{
 		for (size_t i{ 0 }; i < Pieces::squaresAttacked.size(); i++)

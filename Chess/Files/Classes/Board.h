@@ -1,5 +1,3 @@
-//TODO pieceOnSquare values properly set on piece position changes during castling and en passant
-
 /*-----------------------------------------------------------------------------------------
   Class sets up board squares position, handles mouse hits on pieces and draws entire board
   ----------------------------------------------------------------------------------------- */
@@ -59,73 +57,67 @@ public:
 
 	//Perform various functions based on mouse click and mouse cursor position
 	//------------------------------------------------------------------------
-	void handleMouse(std::vector<Pieces*> &pieces, const glm::vec3 &color, float deltaTime, GLFWwindow* window)
+	void playGame(std::vector<Pieces*> &pieces, float deltaTime, GLFWwindow* window)
 	{
+		//First draw the pieces in random colors
+		drawColor(pieces);
+		//Get the color under mouse cursor
+		glm::vec3 color = Mouse::getPixelColorUnderMouse(window);
+		//Draw the chess board
 		draw(pieces);
 
 		if (player == Player::WHITE)
 		{
-			if (!squaresSetup)
-			{
-				for (size_t i{ 0 }; i < pieces.size(); i++)
-				{
-					pieces[i]->setupPieceOnSquareValues();
-				}
-				for (size_t i{ 0 }; i < pieces.size(); i++)
-				{
-					pieces[i]->calcTargetSquares(false);
-				}
-				squaresSetup = true;
-			}
-			for (size_t i{ 0 }; i < pieces.size(); i++)
-			{
-				pieces[i]->drawKingInCheck(true);
-			}
-			switch (status)
-			{
-			case PieceStatus::NOT_SELECTED:
-				drawPiecesOutline(pieces, &color, true);
-				break;
-			case PieceStatus::SELECTED:
-				pieceSelected(pieces, window, true);
-				break;
-			case PieceStatus::MOVING:
-				movePiece(pieces, window, selectedPieceIndex, deltaTime, true);
-				break;
-			}
+			isWhite = true;
 		}
-		else
+
+		else if (player == Player::BLACK)
 		{
-			if (!squaresSetup)
-			{
-				for (size_t i{ 0 }; i < pieces.size(); i++)
-				{
-					pieces[i]->setupPieceOnSquareValues();
-				}
-				for (size_t i{ 0 }; i < pieces.size(); i++)
-				{
-					pieces[i]->calcTargetSquares(true);
-				}
-				squaresSetup = true;
-			}
+			isWhite = false;
+		}
+		
+		//If squares not setup
+		if (!squaresSetup)
+		{
+			//Store the piece positions on the board
 			for (size_t i{ 0 }; i < pieces.size(); i++)
 			{
-				pieces[i]->drawKingInCheck(false);
+				pieces[i]->setupPieceOnSquareValues();
 			}
-			switch (status)
+			//Calculate all the squares attacked by opponent pieces
+			for (size_t i{ 0 }; i < pieces.size(); i++)
 			{
-			case PieceStatus::NOT_SELECTED:
-				drawPiecesOutline(pieces, &color, false);
-				break;
-			case PieceStatus::SELECTED:
-				pieceSelected(pieces, window, false);
-				break;
-			case PieceStatus::MOVING:
-				movePiece(pieces, window, selectedPieceIndex, deltaTime, false);
-				break;
+				pieces[i]->calcTargetSquares(!isWhite, false);
 			}
+			//Calculate all the squares available for current player
+			for (size_t i{ 0 }; i < pieces.size(); i++)
+			{
+				pieces[i]->calcTargetSquares(isWhite, true, pieces);
+			}
+			squaresSetup = true;
+		}
+
+		//For king piece, draw in red if checked
+		for (size_t i{ 0 }; i < pieces.size(); i++)
+		{
+			pieces[i]->drawKingInCheck(isWhite);
+		}
+
+		//Perform various operations based on piece status
+		switch (status)
+		{
+		case PieceStatus::NOT_SELECTED:
+			drawPiecesOutline(pieces, &color, isWhite);
+			break;
+		case PieceStatus::SELECTED:
+			pieceSelected(pieces, window, isWhite);
+			break;
+		case PieceStatus::MOVING:
+			movePiece(pieces, window, selectedPieceIndex, deltaTime, isWhite);
+			break;
 		}
 	}
+
 
 	//Draw the target square that a piece can move to
 	//-----------------------------------------------
@@ -162,10 +154,11 @@ public:
 				selectedTargetSquare = targetSquare;
 			}
 		}
-		Graphics::drawBoard(Graphics::getPiecesColorShader(), &lightSquareTexture, Pieces::squarePositions, squareIndex, squareIndex, 1.0, true, targetSquareColor);
 		//User doesn't want to see the colored square
 		//Therefore draw the specific square with the proper texture again and then draw a small blue square on top to indicate a targetSquare
-		Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 0.95);
+		Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 1.0);
+		Graphics::drawBoard(Graphics::getPiecesColorShader(), &lightSquareTexture, Pieces::squarePositions, squareIndex, squareIndex, 0.95, true, targetSquareColor);
+		Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 0.90);
 		//If the target square contains an enemy piece, draw that enemy piece over the square again
 		if (enemyPiece)
 		{
@@ -173,28 +166,12 @@ public:
 		}
 	}
 	
+	//Switch players and reset game vars
+	//----------------------------------
 	static void switchPlayer(const std::vector<Pieces*> &pieces)
 	{
-		squaresSetup = false;
-		Pieces::kingAttacked = false;
-		Pieces::pieceOnSquare.clear();
-		Pieces::squaresAttacked.clear();
-		//Set status to not selected
-		status = PieceStatus::NOT_SELECTED;
+		resetGameVars(pieces);
 
-		//Invert piece positions since both players should be able to play the game from the same perspective
-		for (int i = 0; i < pieces.size(); i++)
-		{
-			pieces[i]->switchPiecePositions();
-		}
-
-		//Switch square positions
-		//If this is not done then code to set pieceOnSquare values breaks
-		/*for (size_t i = 0; i < Pieces::squarePositions.size(); i++)
-		{
-			Pieces::squarePositions[i] = -Pieces::squarePositions[i];
-		}
-*/
 		//Switch player
 		if (player == Player::WHITE)
 		{
@@ -204,6 +181,25 @@ public:
 		{
 			player = Player::WHITE;
 		}
+	}
+
+	//Resets variables holding various game conditions
+	//------------------------------------------------
+	static void resetGameVars(const std::vector<Pieces*> &pieces)
+	{
+		//Set status to not selected
+		status = PieceStatus::NOT_SELECTED;
+		//Invert piece positions since both players should be able to play the game from the same perspective
+		for (int i = 0; i < pieces.size(); i++)
+		{
+			pieces[i]->switchPiecePositions();
+			pieces[i]->clearAvailableTargetSquares();
+		}
+		squaresSetup = false;
+		Pieces::kingAttacked = false;
+		Pieces::kingAttackingPieces = 0;
+		Pieces::pieceOnSquare.clear();
+		Pieces::squaresAttacked.clear();
 	}
 
 	//Get the index value of the position of the square that matches the piece position from Pieces::squarePositions array
@@ -221,30 +217,16 @@ public:
 		}
 		return -1;
 	}
-
-	static void gameOver(bool isWhite)
+	
+	//Returns a ref to square texture required by king class
+	//------------------------------------------------------
+	static const unsigned int &getTexture()
 	{
-		isGameWon = true;
-		if (isWhite)
-		{
-			isWinningPlayerWhite = true;
-		}
-		else
-		{
-			isWinningPlayerWhite = false;
-		}
+		return lightSquareTexture;
 	}
 
-	bool isGameOver()
-	{
-		return isGameWon;
-	}
-
-	bool winningPlayer()
-	{
-		return isWinningPlayerWhite;
-	}
-
+	//Destructor
+	//----------
 	~Board()
 	{}
 
@@ -266,11 +248,9 @@ private:
 	static glm::vec2 selectedTargetSquare;
 	bool pieceExists = false;
 	bool movingPiece = false;
-	
-	//Game win variables
-	static bool isGameWon;
-	static bool isWinningPlayerWhite;
 
+	bool isWhite;
+	
 	//Draw board squares and pieces visible to user
 	//---------------------------------------------
 	void draw(std::vector<Pieces*> &pieces)
@@ -381,16 +361,8 @@ private:
 		Graphics::drawBoard(Graphics::getPiecesColorShader(), &lightSquareTexture, Pieces::squarePositions, selectedPieceSquareIndex, selectedPieceSquareIndex, 1.0, true);
 		piece->draw(selectedPieceIndex, isWhite);
 
-		//If selected piece is allowed to move
-		if (piece->getMoveAllowed(selectedPieceIndex))
-		{
-			//Draw moves for the currently selected piece
-			piece->drawMoves(window, selectedPieceIndex, isWhite);
-		}
-		else if (Mouse::getMouseClicked())
-		{
-			status = PieceStatus::NOT_SELECTED;
-		}
+		//Draw moves for the currently selected piece
+		piece->drawMoves(window, selectedPieceIndex, isWhite, pieces);
 	}
 
 	//Moves the piece to the selected target square
@@ -411,16 +383,14 @@ private:
 					Pieces::pieceOnSquare[i].piece->deletePiecePosition(Pieces::pieceOnSquare[i].index, isWhite);
 				}
 			}
-			//Don't consider king pieces as king needs to be checked and not allowed to move along the same row/diagonal away from the attacking piece
-			/*if (!piece->isKing(piece))
-			{
-				Pieces::pieceOnSquare[selectedPieceSquareIndex] = false;
-				Pieces::pieceOnSquare[getSquareIndex(targetSquares[moveIndex])] = true;
-			}*/
 			switchPlayer(pieces);
 		}
 	}
 	
+	//----------------
+	//Getter Functions
+	//----------------
+
 	//Get the index value of the position of the square that matches the position of the target square selected
 	//---------------------------------------------------------------------------------------------------------
 	static int getSquareIndex(const glm::vec3& color)
@@ -470,8 +440,6 @@ int Board::squareIndex = -1;
 int Board::selectedPieceSquareIndex = -1;
 int Board::selectedPieceIndex = -1;
 glm::vec2 Board::selectedTargetSquare{};
-bool Board::isGameWon{ false };
-bool Board::isWinningPlayerWhite{ false };
 float Board::squareSizeX{ 0 };
 float Board::squareSizeY{ 0 };
 

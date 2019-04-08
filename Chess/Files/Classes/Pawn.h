@@ -1,6 +1,6 @@
-/* -----------------------------------------------------------------------------------
-   Specific piece classes derive from Base class Pieces. Comments apply to all classes
-   ----------------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------------------------------------------------
+   Specific piece classes derive from Base class Pieces. Universal piece function comments apply to all piece classes
+   ------------------------------------------------------------------------------------------------------------------ */
 #pragma once
 #ifndef PAWN_H
 #define PAWN_H
@@ -20,6 +20,7 @@ class Pawn : public Pieces
 public:
 
 	//Constructor
+	//-----------
 	Pawn()
 	{
 		whitePawn = Graphics::loadTexture("Files/Textures/Pieces/White/white pawn.png", true);
@@ -27,56 +28,72 @@ public:
 		setInitPawnPositions();
 	}
 
-	//-----------------
-	//VIRTUAL FUNCTIONS
-	//-----------------
+	//Setup stenciling to draw outline of the piece under mouse cursor
+	//----------------------------------------------------------------
+	void pawnOutline(int index, bool isWhite) const
+	{
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF);
+		draw(index, isWhite);
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		glStencilMask(0x00);
+		drawColor(index, isWhite);
+	}
 
 	//Calculate all the possible target squares for the currently selected pawn using the pawnMoves vector
 	//----------------------------------------------------------------------------------------------------
-	virtual void calcTargetSquares(bool isWhite, int index = -1) override
+	virtual void calcTargetSquares(bool isWhite, bool currentPlayer, const std::vector<Pieces*> &pieces = std::vector<Pieces*>{}) override
 	{
-		if (index != -1)
+		std::vector<PieceAttribs> targetSquares;
+		//If current player, calculate the available target squares for the current player
+		if (currentPlayer)
 		{
-			if (isWhite)
-			{
-				moves.calcPawnTargetSquares(targetSquares, index, pawnMoves, whitePawnPositions, initPawnPositions, isWhite);
-			}
-			else
-			{
-				moves.calcPawnTargetSquares(targetSquares, index, pawnMoves, blackPawnPositions, initPawnPositions, isWhite);
-			}
-		}
-		else
-		{
-			reversePawnMoves();
 			if (isWhite)
 			{
 				for (size_t i{ 0 }; i < whitePawnPositions.size(); i++)
 				{
-					moves.calcPawnAttackedSquares(targetSquares, i, pawnMoves, whitePawnPositions, isWhite, King::blackKingPositions[0]);
+					moves.calcPawnTargetSquares(targetSquares, i, pawnMoves, whitePawnPositions, initPawnPositions, isWhite, pieces);
+					availableTargetSquares.push_back(targetSquares);
+					targetSquares.clear();
 				}
-				squaresAttacked.insert(squaresAttacked.end(), targetSquares.begin(), targetSquares.end());
 			}
 			else
 			{
 				for (size_t i{ 0 }; i < blackPawnPositions.size(); i++)
 				{
-					moves.calcPawnAttackedSquares(targetSquares, i, pawnMoves, blackPawnPositions, isWhite, King::whiteKingPositions[0]);
+					moves.calcPawnTargetSquares(targetSquares, i, pawnMoves, blackPawnPositions, initPawnPositions, isWhite, pieces);
+					availableTargetSquares.push_back(targetSquares);
+					targetSquares.clear();
 				}
-				squaresAttacked.insert(squaresAttacked.end(), targetSquares.begin(), targetSquares.end());
 			}
-			/*for (size_t i{ 0 }; i < Pieces::pieceOnSquare.size(); i++)
+		}
+		//Calculate squares attacked by all opponent pawns
+		//Need this to evaluate king safe squares as well as king attacked or not
+		else
+		{
+			//As pawn positions have been switched, reverse pawn moves values before calculating target squares as pawns can move in only 1 direction
+			reversePawnMoves();
+			if (isWhite)
 			{
-				if (Pieces::pieceOnSquare[i].position == whitePawnPositions[3])
+				for (size_t i{ 0 }; i < whitePawnPositions.size(); i++)
 				{
-					std::cout << std::boolalpha << Pieces::pieceOnSquare[i].attackingOpponentKing << std::endl;
+					moves.calcPawnAttackedSquares(targetSquares, i, pawnMoves, whitePawnPositions, isWhite, King::getKingPosition(!isWhite));
 				}
-			}*/
-			targetSquares.clear();
+			}
+			else
+			{
+				for (size_t i{ 0 }; i < blackPawnPositions.size(); i++)
+				{
+					moves.calcPawnAttackedSquares(targetSquares, i, pawnMoves, blackPawnPositions, isWhite, King::getKingPosition(!isWhite));
+				}
+			}
+			squaresAttacked.insert(squaresAttacked.end(), targetSquares.begin(), targetSquares.end());
 			reversePawnMoves();
 		}
 	}
 
+	//Reverses pawn moves vector values
+	//---------------------------------
 	void reversePawnMoves()
 	{
 		for (size_t i{ 0 }; i < pawnMoves.size(); i++)
@@ -133,29 +150,23 @@ public:
 
 	//Draw all the possible target squares for pawn  
 	//---------------------------------------------
-	virtual void drawMoves(GLFWwindow* window, int selectedPieceIndex, bool isWhite) override
+	virtual void drawMoves(GLFWwindow* window, int selectedPieceIndex, bool isWhite, const std::vector<Pieces*> &pieces) override
 	{
-		if (targetSquares.size() == 0)
+		//Loop through the targetSquares vector and draw the target squares
+		for (size_t i = 0; i < availableTargetSquares[selectedPieceIndex].size(); i++)
 		{
-			calcTargetSquares(isWhite, selectedPieceIndex);
-		}
-
-		//checkIfPieceIsPinned(targetSquares, selectedPieceIndex, pieces, isWhite);
-		
-		//Loop through the targetSquares vector
-		for (size_t i = 0; i < targetSquares.size(); i++)
-		{
-			if (targetSquares[i].piece)
+			//If an opponent piece exists on target square, draw the square in red
+			if (availableTargetSquares[selectedPieceIndex][i].piece)
 			{
-				Board::drawTargetSquare(enemySquareColor, targetSquares[i].position, window, targetSquares[i].piece, targetSquares[i].index, isWhite);
+				Board::drawTargetSquare(enemySquareColor, availableTargetSquares[selectedPieceIndex][i].position, window, availableTargetSquares[selectedPieceIndex][i].piece, availableTargetSquares[selectedPieceIndex][i].index, isWhite);
 			}
 			else
 			{
-				Board::drawTargetSquare(targetSquareColor, targetSquares[i].position, window, targetSquares[i].piece, targetSquares[i].index, isWhite);
+				Board::drawTargetSquare(targetSquareColor, availableTargetSquares[selectedPieceIndex][i].position, window, availableTargetSquares[selectedPieceIndex][i].piece, availableTargetSquares[selectedPieceIndex][i].index, isWhite);
 			}
+			//If user has selected a square for moving then break 
 			if (Board::status == PieceStatus::MOVING)
 			{
-				targetSquares.clear();
 				return;
 			}
 		}
@@ -163,67 +174,23 @@ public:
 		if (Mouse::getMouseClicked())
 		{
 			Board::status = PieceStatus::NOT_SELECTED;
-			targetSquares.clear();
 		}
 	}
 
-	/*void checkIfPieceIsPinned(std::vector<glm::vec2> &targetSquares, int selectedPieceIndex, const std::vector<Pieces *> &pieces, bool isWhite)
+	//Calculate the difference between the selected target square and the selected piece position
+	//-------------------------------------------------------------------------------------------
+	virtual void calcDifferenceBetweenSquares(const glm::vec2 &targetSquare, int index, bool isWhite) override
 	{
-		if (King::kingAttacked)
-		{
-			return;
-		}
-
-		Pieces::squaresAttacked.clear();
-		int squareIndex;
 		if (isWhite)
 		{
-			squareIndex = Pieces::getSquareIndex(whitePawnPositions[selectedPieceIndex]);
+			diffBetweenSquares = targetSquare - whitePawnPositions[index];
 		}
 		else
 		{
-			squareIndex = Pieces::getSquareIndex(blackPawnPositions[selectedPieceIndex]);
+			diffBetweenSquares = targetSquare - blackPawnPositions[index];
 		}
-		Pieces::pieceOnSquare[squareIndex] = false;
-
-		for (size_t i = 0; i < pieces.size(); i++)
-		{
-			pieces[i]->checkIfAttackingKing(isWhite);
-		}
-		
-		if (King::kingAttacked)
-		{
-			moveAllowed[selectedPieceIndex] = false;
-			isPinned[selectedPieceIndex] = true;
-			for (size_t i = 0; i < targetSquares.size(); i++)
-			{
-				bool squareAttacked = false;
-				for (size_t j = 0; j < Pieces::squaresAttacked.size(); j++)
-				{
-					if (targetSquares[i] == squaresAttacked[j])
-					{
-						moveAllowed[selectedPieceIndex] = true;
-						squareAttacked = true;
-					}
-				}
-				if (!squareAttacked)
-				{
-					targetSquares[i] = glm::vec2(2.0, 2.0);
-				}
-			}
-			King::kingAttacked = false;
-			Pieces::pieceOnSquare[squareIndex] = true;
-			if (Mouse::getMouseClicked())
-			{
-				Board::status = PieceStatus::NOT_SELECTED;
-			}
-			return;
-		}
-
-		isPinned[selectedPieceIndex] = false;
-		Pieces::pieceOnSquare[squareIndex] = true;
-	}*/
-
+	}
+	
 	//Move pawn to the target square
 	//If target square is a pawn promotion square, promote the pawn to a user selected piece
 	//--------------------------------------------------------------------------------------
@@ -261,10 +228,16 @@ public:
 	}
 	
 	//Invert pawn position values
+	//---------------------------
 	virtual void switchPiecePositions() override
 	{
 		Pieces::switchPiecePositions(whitePawnPositions);
 		Pieces::switchPiecePositions(blackPawnPositions);
+	}
+
+	virtual void clearAvailableTargetSquares() override
+	{
+		availableTargetSquares.clear();
 	}
 		
 	//Get the index of the piece based on the color of the pixel under mouse color and draw that piece's outline
@@ -316,22 +289,8 @@ public:
 		}
 	}
 
-	virtual void calcDifferenceBetweenSquares(const glm::vec2 &targetSquare, int index, bool isWhite) override
-	{
-		if (isWhite)
-		{
-			diffBetweenSquares = targetSquare - whitePawnPositions[index];
-		}
-		else
-		{
-			diffBetweenSquares = targetSquare - blackPawnPositions[index];
-		}
-	}
-
-	//Getter functions
-	//----------------
-
 	//Returns the piece position at the given index
+	//---------------------------------------------
 	virtual const glm::vec2& getPiecePosition(int index, bool isWhite) const override
 	{
 		if (isWhite)
@@ -342,18 +301,6 @@ public:
 		{
 			return blackPawnPositions[index];
 		}
-	}
-
-	//Setup stenciling to draw outline of the piece under mouse cursor
-	//----------------------------------------------------------------
-	void pawnOutline(int index, bool isWhite) const
-	{
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilMask(0xFF);
-		draw(index, isWhite);
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		glStencilMask(0x00);
-		drawColor(index, isWhite);
 	}
 
 	//Promote pawn to the desired piece
@@ -420,36 +367,9 @@ public:
 			Board::switchPlayer(pieces);
 		}
 	}
-		
-	//Check if the target square is a square which can be used to promote the pawn
-	//----------------------------------------------------------------------------
 	
-
-	virtual void setMoveAllowed(bool val) override
-	{
-		for (size_t i = 0; i < moveAllowed.size(); i++)
-		{
-			moveAllowed[i] = val;
-		}
-	}
-
-	virtual bool getMoveAllowed(int pieceIndex) override
-	{
-		return moveAllowed[pieceIndex];
-	}
-
-	virtual bool noPieceCanMove() override
-	{
-		for (size_t i = 0; i < moveAllowed.size(); i++)
-		{
-			if (moveAllowed[i])
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-
+	//Destructor
+	//----------
 	virtual ~Pawn()
 	{}
 	
@@ -462,57 +382,50 @@ private:
 	unsigned int blackPawn;
 	unsigned int whitePawn;
 		
-	//-------------------------
 	//Position and color arrays
+	std::vector<glm::vec2> initPawnPositions;
 	std::vector<glm::vec2> whitePawnPositions;
 	std::vector<glm::vec3> whitePawnColors;
 	std::vector<glm::vec2> blackPawnPositions;
 	std::vector<glm::vec3> blackPawnColors;
 
+	//Target square variables
 	glm::vec2 diffBetweenSquares;
-	std::vector<PieceAttribs> targetSquares;
-		
-	//Stores initial pawn positions
-	std::vector<glm::vec2> initPawnPositions;
+	std::vector<std::vector<PieceAttribs>> availableTargetSquares;
 	
 	PawnRules pawnRules;
 
 	//Movement variables
 	Moves moves;
 	std::vector<glm::vec2> pawnMoves;
-	std::vector<bool> moveAllowed;
 
 	//Variables used for drawing target squares
-	std::vector<bool> isPinned;
-	int targetPieceIndex;
 	glm::vec3 targetSquareColor{ 0.0, 0.8, 1.0 };
 	glm::vec3 enemySquareColor{ 1.0, 0.0, 0.0 };
-	bool pieceExists;
 		
 	//Sets up initial pawn positions. Calls base class setupPositions function
+	//------------------------------------------------------------------------
 	void setInitPawnPositions()
 	{
 		setPawnMoves();
 		Pieces::setupPositions(whitePawnPositions, whitePawnColors, 8, 8);
 		Pieces::setupPositions(blackPawnPositions, blackPawnColors, 8, 48);
 
+		//Set initial pawn positions and pawn promotion square positions
 		for (size_t i = 0; i < whitePawnPositions.size(); i++)
 		{
 			initPawnPositions.push_back(whitePawnPositions[i]);
 		}
-
+		//i = 56 to 64 implies all top rank squares
+		//As position switches for black player, squares will remain the same
 		for (int i = 56; i < 64; i++)
 		{
 			pawnRules.setPawnPromotionSquares(Pieces::squarePositions[i]);
 		}
-
-		for (size_t i = 0; i < 8; i++)
-		{
-			moveAllowed.push_back(true);
-			isPinned.push_back(false);
-		}
 	}
 
+	//Set piece on square vector values for all pawn pieces
+	//-----------------------------------------------------
 	virtual void setupPieceOnSquareValues() override
 	{
 		PieceAttribs square;
@@ -537,11 +450,15 @@ private:
 		}
 	}
 
-	//------------------------
 	//Setup all the pawn moves
+	//------------------------
 	void setPawnMoves()
 	{
 		//Distance between each square center is 0.25
+
+		//Pawn moves are:
+		//2 diagonal killing moves
+		//2 straight moves, double square move only possible at initial position
 		pawnMoves.push_back(glm::vec2(0.25, 0.25));
 		pawnMoves.push_back(glm::vec2(-0.25, 0.25));
 		pawnMoves.push_back(glm::vec2(0.0, 0.25));

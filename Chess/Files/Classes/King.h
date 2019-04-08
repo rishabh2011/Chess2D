@@ -1,3 +1,6 @@
+/* ---------------------------------------------------------------------------------------------------------------
+  Universal piece functions have been commented in pawn class. Only piece specific functions commented in this class
+  ---------------------------------------------------------------------------------------------------------------- */
 #ifndef KING_H
 #define KING_H
 
@@ -8,11 +11,7 @@
 class King : public Pieces
 {
 public:
-
-	static std::vector<glm::vec2> whiteKingPositions;
-	static std::vector<glm::vec2> blackKingPositions;
-	static int attackingPieces;
-
+		
 	King()
 	{
 		whiteKing = Graphics::loadTexture("Files/Textures/Pieces/White/white king.png", true);
@@ -30,17 +29,28 @@ public:
 		drawColor(index, isWhite);
 	}
 
-	virtual void calcTargetSquares(bool isWhite, int index = -1) override
+	virtual void calcTargetSquares(bool isWhite, bool currentPlayer, const std::vector<Pieces*> &pieces = std::vector<Pieces*>{}) override
 	{
-		if (index != -1)
+		std::vector<PieceAttribs> targetSquares;
+		if (currentPlayer)
 		{
 			if (isWhite)
 			{
-				moves.calcKingTargetSquares(targetSquares, index, kingMoves, whiteKingPositions, isWhite);
+				for (size_t i{ 0 }; i < whiteKingPositions.size(); i++)
+				{
+					moves.calcKingTargetSquares(targetSquares, i, kingMoves, whiteKingPositions, isWhite);
+					availableTargetSquares.push_back(targetSquares);
+					targetSquares.clear();
+				}
 			}
 			else
 			{
-				moves.calcKingTargetSquares(targetSquares, index, kingMoves, blackKingPositions, isWhite);
+				for (size_t i{ 0 }; i < blackKingPositions.size(); i++)
+				{
+					moves.calcKingTargetSquares(targetSquares, i, kingMoves, blackKingPositions, isWhite);
+					availableTargetSquares.push_back(targetSquares);
+					targetSquares.clear();
+				}
 			}
 		}
 		else
@@ -51,7 +61,6 @@ public:
 				{
 					moves.calcKingAttackedSquares(targetSquares, i, kingMoves, whiteKingPositions, isWhite);
 				}
-				squaresAttacked.insert(squaresAttacked.end(), targetSquares.begin(), targetSquares.end());
 			}
 			else
 			{
@@ -59,32 +68,37 @@ public:
 				{
 					moves.calcKingAttackedSquares(targetSquares, i, kingMoves, blackKingPositions, isWhite);
 				}
-				squaresAttacked.insert(squaresAttacked.end(), targetSquares.begin(), targetSquares.end());
 			}
-			targetSquares.clear();
+			squaresAttacked.insert(squaresAttacked.end(), targetSquares.begin(), targetSquares.end());
 		}
 	}
 
+	//Draws king square in red to indicate check
+	//------------------------------------------
 	virtual void drawKingInCheck(bool isWhite) override
 	{
 		if (kingAttacked)
 		{
 			if (isWhite)
 			{
-				int squareIndex = Pieces::getSquareIndex(whiteKingPositions[0]);
+				//Get square index of the king and color that square in red
+				int squareIndex = Board::getSquareIndex(whiteKingPositions[0]);
 				if (squareIndex != -1)
 				{
-					Graphics::drawBoard(Graphics::getPiecesColorShader(), &Board::lightSquareTexture, Pieces::squarePositions, squareIndex, squareIndex, 1.0, true, glm::vec3(1.0, 0.0, 0.0));
+					Graphics::drawBoard(Graphics::getPiecesColorShader(), &Board::getTexture(), squarePositions, squareIndex, squareIndex, 1.0, true, glm::vec3(1.0, 0.0, 0.0));
 				}
+				//Finally draw the king back on top
 				draw(0, isWhite);
 			}
 			else
 			{
-				int squareIndex = Pieces::getSquareIndex(blackKingPositions[0]);
+				//Get square index of the king and color that square in red
+				int squareIndex = Board::getSquareIndex(blackKingPositions[0]);
 				if (squareIndex != -1)
 				{
-					Graphics::drawBoard(Graphics::getPiecesColorShader(), &Board::lightSquareTexture, Pieces::squarePositions, squareIndex, squareIndex, 1.0, true, glm::vec3(1.0, 0.0, 0.0));
+					Graphics::drawBoard(Graphics::getPiecesColorShader(), &Board::getTexture(), squarePositions, squareIndex, squareIndex, 1.0, true, glm::vec3(1.0, 0.0, 0.0));
 				}
+				//Finally draw the king back on top
 				draw(0, isWhite);
 			}
 		}
@@ -132,29 +146,23 @@ public:
 		}
 	}
 
-	virtual void drawMoves(GLFWwindow* window, int selectedPieceIndex, bool isWhite) override
+	virtual void drawMoves(GLFWwindow* window, int selectedPieceIndex, bool isWhite, const std::vector<Pieces*> &pieces) override
 	{
-		if (targetSquares.size() == 0)
+		//Loop through the targetSquares vector and draw the target squares
+		for (size_t i = 0; i < availableTargetSquares[selectedPieceIndex].size(); i++)
 		{
-			calcTargetSquares(isWhite, selectedPieceIndex);
-		}
-
-		//checkIfPieceIsPinned(targetSquares, selectedPieceIndex, pieces, isWhite);
-
-		//Loop through the targetSquares vector
-		for (size_t i = 0; i < targetSquares.size(); i++)
-		{
-			if (targetSquares[i].piece)
+			//If an opponent piece exists on target square, draw the square in red
+			if (availableTargetSquares[selectedPieceIndex][i].piece)
 			{
-				Board::drawTargetSquare(enemySquareColor, targetSquares[i].position, window, targetSquares[i].piece, targetSquares[i].index, isWhite);
+				Board::drawTargetSquare(enemySquareColor, availableTargetSquares[selectedPieceIndex][i].position, window, availableTargetSquares[selectedPieceIndex][i].piece, availableTargetSquares[selectedPieceIndex][i].index, isWhite);
 			}
 			else
 			{
-				Board::drawTargetSquare(targetSquareColor, targetSquares[i].position, window, targetSquares[i].piece, targetSquares[i].index, isWhite);
+				Board::drawTargetSquare(targetSquareColor, availableTargetSquares[selectedPieceIndex][i].position, window, availableTargetSquares[selectedPieceIndex][i].piece, availableTargetSquares[selectedPieceIndex][i].index, isWhite);
 			}
+			//If user has selected a square for moving then break 
 			if (Board::status == PieceStatus::MOVING)
 			{
-				targetSquares.clear();
 				return;
 			}
 		}
@@ -162,7 +170,6 @@ public:
 		if (Mouse::getMouseClicked())
 		{
 			Board::status = PieceStatus::NOT_SELECTED;
-			targetSquares.clear();
 		}
 	}
 	
@@ -184,6 +191,11 @@ public:
 		Pieces::switchPiecePositions(blackKingPositions);
 	}
 	
+	virtual void clearAvailableTargetSquares() override
+	{
+		availableTargetSquares.clear();
+	}
+
 	virtual int drawPieceOutline(const glm::vec3* color, bool isWhite) const override
 	{
 		int val;
@@ -215,17 +227,7 @@ public:
 		}
 	}
 
-	virtual void deletePiecePosition(int index, bool isWhite, bool isPawnPromote = false) override
-	{
-		if (isWhite)
-		{
-			blackKingPositions[index] = glm::vec2(2.0, 2.0);
-		}
-		else
-		{
-			whiteKingPositions[index] = glm::vec2(2.0, 2.0);
-		}
-	}
+	virtual void deletePiecePosition(int index, bool isWhite, bool isPawnPromote = false) override{}
 
 	virtual void calcDifferenceBetweenSquares(const glm::vec2 &targetSquare, int index, bool isWhite) override
 	{
@@ -238,30 +240,41 @@ public:
 			diffBetweenSquares = targetSquare - blackKingPositions[index];
 		}
 	}
-		
-	virtual bool isKing(Pieces* piece) override
+
+	//Get position of king
+	//--------------------
+	static const glm::vec2 &getKingPosition(bool isWhite)
 	{
-		return true;
+		if (isWhite)
+		{
+			return whiteKingPositions[0];
+		}
+		else
+		{
+			return blackKingPositions[0];
+		}
 	}
-	
+
 	virtual ~King() = default;
 
 private:
 	unsigned int blackKing;
 	unsigned int whiteKing;
 
+	static std::vector<glm::vec2> whiteKingPositions;
+	static std::vector<glm::vec2> blackKingPositions;
 	std::vector<glm::vec3> whiteKingColors;
 	std::vector<glm::vec3> blackKingColors;
-	std::vector<PieceAttribs> targetSquares;
+
 	glm::vec2 diffBetweenSquares;
+	std::vector<std::vector<PieceAttribs>> availableTargetSquares;
+	
 	Moves moves;
 	std::vector<glm::vec2> kingMoves;
 
-	int targetPieceIndex;
 	glm::vec3 targetSquareColor{ 0.0, 0.8, 1.0 };
 	glm::vec3 enemySquareColor{ 1.0, 0.0, 0.0 };
-	bool pieceExists;
-
+	
 	void setInitKingPositions()
 	{
 		setKingMoves();
@@ -295,6 +308,7 @@ private:
 	
 	void setKingMoves()
 	{
+		//King can move in all 8 directions but only 1 square
 		kingMoves.push_back(glm::vec2(0.25, 0.0));
 		kingMoves.push_back(glm::vec2(0.0, 0.25));
 		kingMoves.push_back(glm::vec2(0.25, 0.25));
@@ -308,6 +322,5 @@ private:
 
 std::vector<glm::vec2> King::whiteKingPositions{};
 std::vector<glm::vec2> King::blackKingPositions{};
-int King::attackingPieces = 0;
 
 #endif

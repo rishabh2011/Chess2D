@@ -1,3 +1,6 @@
+/* ---------------------------------------------------------------------------------------------------------------
+  Universal piece functions have been commented in pawn class. Only piece specific functions commented in this class
+  ---------------------------------------------------------------------------------------------------------------- */
 #ifndef BISHOP_H
 #define BISHOP_H
 
@@ -27,17 +30,28 @@ public:
 		drawColor(index, isWhite);
 	}
 
-	virtual void calcTargetSquares(bool isWhite, int index = -1) override
+	virtual void calcTargetSquares(bool isWhite, bool currentPlayer, const std::vector<Pieces*> &pieces = std::vector<Pieces*>{}) override
 	{
-		if (index != -1)
+		std::vector<PieceAttribs> targetSquares;
+		if (currentPlayer)
 		{
 			if (isWhite)
 			{
-				moves.calcBishopTargetSquares(targetSquares, index, bishopMoves, whiteBishopPositions, isWhite);
+				for (size_t i{ 0 }; i < whiteBishopPositions.size(); i++)
+				{
+					moves.calcBishopTargetSquares(targetSquares, i, bishopMoves, whiteBishopPositions, isWhite, pieces);
+					availableTargetSquares.push_back(targetSquares);
+					targetSquares.clear();
+				}
 			}
 			else
 			{
-				moves.calcBishopTargetSquares(targetSquares, index, bishopMoves, blackBishopPositions, isWhite);
+				for (size_t i{ 0 }; i < blackBishopPositions.size(); i++)
+				{
+					moves.calcBishopTargetSquares(targetSquares, i, bishopMoves, blackBishopPositions, isWhite, pieces);
+					availableTargetSquares.push_back(targetSquares);
+					targetSquares.clear();
+				}
 			}
 		}
 		else
@@ -46,26 +60,17 @@ public:
 			{
 				for (size_t i{ 0 }; i < whiteBishopPositions.size(); i++)
 				{
-					moves.calcBishopAttackedSquares(targetSquares, i, bishopMoves, whiteBishopPositions, isWhite, King::blackKingPositions[0]);
+					moves.calcBishopAttackedSquares(targetSquares, i, bishopMoves, whiteBishopPositions, isWhite, King::getKingPosition(!isWhite));
 				}
-				squaresAttacked.insert(squaresAttacked.end(), targetSquares.begin(), targetSquares.end());
 			}
 			else
 			{
 				for (size_t i{ 0 }; i < blackBishopPositions.size(); i++)
 				{
-					moves.calcBishopAttackedSquares(targetSquares, i, bishopMoves, blackBishopPositions, isWhite, King::whiteKingPositions[0]);
-				}
-				squaresAttacked.insert(squaresAttacked.end(), targetSquares.begin(), targetSquares.end());
-			}
-			for (size_t i = 0; i < Pieces::pieceOnSquare.size(); i++)
-			{
-				if (Pieces::pieceOnSquare[i].position == whiteBishopPositions[0])
-				{
-					std::cout << std::boolalpha << pieceOnSquare[i].attackingOpponentKing << std::endl;
+					moves.calcBishopAttackedSquares(targetSquares, i, bishopMoves, blackBishopPositions, isWhite, King::getKingPosition(!isWhite));
 				}
 			}
-			targetSquares.clear();
+			squaresAttacked.insert(squaresAttacked.end(), targetSquares.begin(), targetSquares.end());
 		}
 	}
 
@@ -111,96 +116,33 @@ public:
 		}
 	}
 
-	virtual void drawMoves(GLFWwindow* window, int selectedPieceIndex, bool isWhite) override
+	virtual void drawMoves(GLFWwindow* window, int selectedPieceIndex, bool isWhite, const std::vector<Pieces*> &pieces) override
 	{
-		if (targetSquares.size() == 0)
+		//Loop through the targetSquares vector and draw the target squares
+		for (size_t i = 0; i < availableTargetSquares[selectedPieceIndex].size(); i++)
 		{
-			calcTargetSquares(isWhite, selectedPieceIndex);
-		}
-		//checkIfPieceIsPinned(targetSquares, selectedPieceIndex, pieces, isWhite);
-
-		//Loop through the targetSquares vector
-		for (size_t i = 0; i < targetSquares.size(); i++)
-		{
-			if (targetSquares[i].piece)
+			//If an opponent piece exists on target square, draw the square in red
+			if (availableTargetSquares[selectedPieceIndex][i].piece)
 			{
-				Board::drawTargetSquare(enemySquareColor, targetSquares[i].position, window, targetSquares[i].piece, targetSquares[i].index, isWhite);
+				Board::drawTargetSquare(enemySquareColor, availableTargetSquares[selectedPieceIndex][i].position, window, availableTargetSquares[selectedPieceIndex][i].piece, availableTargetSquares[selectedPieceIndex][i].index, isWhite);
 			}
 			else
 			{
-				Board::drawTargetSquare(targetSquareColor, targetSquares[i].position, window, targetSquares[i].piece, targetSquares[i].index, isWhite);
+				Board::drawTargetSquare(targetSquareColor, availableTargetSquares[selectedPieceIndex][i].position, window, availableTargetSquares[selectedPieceIndex][i].piece, availableTargetSquares[selectedPieceIndex][i].index, isWhite);
+			}
+			//If user has selected a square for moving then break 
+			if (Board::status == PieceStatus::MOVING)
+			{
+				return;
 			}
 		}
-		if (Board::status == PieceStatus::MOVING)
-		{
-			targetSquares.clear();
-			return;
-		}
-		//If no moves are possible
+		//If mouse is clicked on an invalid square
 		if (Mouse::getMouseClicked())
 		{
-			targetSquares.clear();
 			Board::status = PieceStatus::NOT_SELECTED;
 		}
 	}
-
-	/*void checkIfPieceIsPinned(std::vector<glm::vec2> &targetSquares, int selectedPieceIndex, const std::vector<Pieces *> &pieces, bool isWhite)
-	{
-		if (King::kingAttacked)
-		{
-			return;
-		}
-
-		Pieces::squaresAttacked.clear();
-		int squareIndex;
-		if (isWhite)
-		{
-			squareIndex = Pieces::getSquareIndex(whiteBishopPositions[selectedPieceIndex]);
-		}
-		else
-		{
-			squareIndex = Pieces::getSquareIndex(blackBishopPositions[selectedPieceIndex]);
-		}
-		Pieces::pieceOnSquare[squareIndex] = false;
-
-		for (size_t i = 0; i < pieces.size(); i++)
-		{
-			pieces[i]->checkIfAttackingKing(isWhite);
-		}
-
-		if (King::kingAttacked)
-		{
-			moveAllowed[selectedPieceIndex] = false;
-			isPinned[selectedPieceIndex] = true;
-			for (size_t i = 0; i < targetSquares.size(); i++)
-			{
-				bool squareAttacked = false;
-				for (size_t j = 0; j < Pieces::squaresAttacked.size(); j++)
-				{
-					if (targetSquares[i] == squaresAttacked[j])
-					{
-						moveAllowed[selectedPieceIndex] = true;
-						squareAttacked = true;
-					}
-				}
-				if (!squareAttacked)
-				{
-					targetSquares[i] = glm::vec2(2.0, 2.0);
-				}
-			}
-			King::kingAttacked = false;
-			Pieces::pieceOnSquare[squareIndex] = true;
-			if (Mouse::getMouseClicked())
-			{
-				Board::status = PieceStatus::NOT_SELECTED;
-			}
-			return;
-		}
-
-		isPinned[selectedPieceIndex] = false;
-		Pieces::pieceOnSquare[squareIndex] = true;
-	}
-	*/
+		
 	virtual void movePiece(const glm::vec2 &targetSquare, int pieceIndex, float deltaTime, bool isWhite, const std::vector<Pieces*> &pieces, GLFWwindow* window) override
 	{
 		if (isWhite)
@@ -217,6 +159,11 @@ public:
 	{
 		Pieces::switchPiecePositions(whiteBishopPositions);
 		Pieces::switchPiecePositions(blackBishopPositions);
+	}
+
+	virtual void clearAvailableTargetSquares() override
+	{
+		availableTargetSquares.clear();
 	}
 
 	virtual int drawPieceOutline(const glm::vec3* color, bool isWhite) const override
@@ -262,19 +209,24 @@ public:
 		}
 	}
 
+	//Generates a new bishop at the target square where pawn gets promoted
+	//--------------------------------------------------------------------
 	void generateNewBishop(const glm::vec2* targetSquare, bool isWhite)
 	{
 		if (isWhite)
 		{
+			//Add a new bishop to the bishop position vector 
 			whiteBishopPositions.push_back(*targetSquare);
+			//Also generate a new color for the new bishop
 			whiteBishopColors.push_back(Graphics::genRandomColor());
 		}
 		else
 		{
+			//Add a new bishop to the bishop position vector 
 			blackBishopPositions.push_back(*targetSquare);
+			//Also generate a new color for the new bishop
 			blackBishopColors.push_back(Graphics::genRandomColor());
 		}
-		moveAllowed.push_back(true);
 	}
 
 	virtual void calcDifferenceBetweenSquares(const glm::vec2 &targetSquare, int index, bool isWhite) override
@@ -289,31 +241,6 @@ public:
 		}
 	}
 
-	virtual void setMoveAllowed(bool val) override
-	{
-		for (size_t i = 0; i < moveAllowed.size(); i++)
-		{
-			moveAllowed[i] = val;
-		}
-	}
-
-	virtual bool getMoveAllowed(int pieceIndex) override
-	{
-		return moveAllowed[pieceIndex];
-	}
-
-	virtual bool noPieceCanMove() override
-	{
-		for (size_t i = 0; i < moveAllowed.size(); i++)
-		{
-			if (moveAllowed[i])
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-
 	virtual ~Bishop() = default;
 
 private:
@@ -324,28 +251,21 @@ private:
 	std::vector<glm::vec3> whiteBishopColors;
 	std::vector<glm::vec2> blackBishopPositions;
 	std::vector<glm::vec3> blackBishopColors;
-	std::vector<PieceAttribs> targetSquares;
+
 	glm::vec2 diffBetweenSquares;
+	std::vector<std::vector<PieceAttribs>> availableTargetSquares;
+	
 	Moves moves;
 	std::vector<glm::vec2> bishopMoves;
-	std::vector<bool> moveAllowed;
 	
-	std::vector<bool> isPinned;
-	int targetPieceIndex;
 	glm::vec3 targetSquareColor{ 0.0, 0.8, 1.0 };
 	glm::vec3 enemySquareColor{ 1.0, 0.0, 0.0 };
-	bool pieceExists;
-
+	
 	void setInitBishopPositions()
 	{
 		setBishopMoves();
 		Pieces::setupPositions(whiteBishopPositions, whiteBishopColors, 2, 2, 5);
 		Pieces::setupPositions(blackBishopPositions, blackBishopColors, 2, 58, 61);
-		for (size_t i = 0; i < 4; i++)
-		{
-			moveAllowed.push_back(true);
-			isPinned.push_back(false);
-		}
 	}
 
 	virtual void setupPieceOnSquareValues() override
@@ -374,6 +294,7 @@ private:
 
 	void setBishopMoves()
 	{
+		//Bishop can move diagonally in 4 directions for a maximum of 7 squares
 		for (int i = 0; i < 7; i++)
 		{
 			bishopMoves.push_back(glm::vec2((i + 1) * 0.25, (i + 1) * 0.25));

@@ -43,18 +43,10 @@ public:
 			glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 			//Render
-			if (board->isGameOver())
-			{
-				
-			}
-			else
-			{
-				glStencilMask(0x00);
-				board->drawColor(pieces);
-				board->handleMouse(pieces, Mouse::getPixelColorUnderMouse(window), deltaTime, window);
-				glStencilMask(0xFF);
-			}
-			
+			glStencilMask(0x00);
+			board->playGame(pieces, deltaTime, window);
+			glStencilMask(0xFF);
+						
 			glfwSwapBuffers(window);
 			glfwPollEvents();
 		}

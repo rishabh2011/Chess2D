@@ -9,13 +9,14 @@
 
 class Pieces;
 
+//Struct holds all necessary attributes of a piece
 struct PieceAttribs
 {
 	glm::vec2 position;
-	int index;
-	bool isWhite;
-	bool attackingOpponentKing = false;
-	Pieces* piece;
+	int index;  //piece index within its vector
+	bool isWhite; //piece white or black
+	bool attackingOpponentKing = false;  
+	Pieces* piece;  //piece type
 };
 
 class Pieces
@@ -23,32 +24,29 @@ class Pieces
 
 public:
 	//Board square positions array
-	static std::vector<PieceAttribs> pieceOnSquare;
-	static std::vector<PieceAttribs> squaresAttacked;
+	static std::vector<PieceAttribs> pieceOnSquare;  //stores the position of all the pieces on the board
+	static std::vector<PieceAttribs> squaresAttacked; //stores the squares attacked by opponent pieces
 	static std::vector<glm::vec2> squarePositions;
 	static std::vector<glm::vec3> squareColors;
 	static bool kingAttacked;
+	static int kingAttackingPieces;  //Store total attacking pieces. If attacking pieces are more than 1, only king is allowed to move
 	
+	//-----------------
+	//Virtual Functions
+	//-----------------
+
 	virtual void draw(int index = -1, bool isWhite = false) const = 0;
 
 	virtual void drawColor(int index = -1, bool isWhite = false) const = 0;
 
 	virtual int drawPieceOutline(const glm::vec3* color, bool isPlayerWhite) const = 0;
 
-	virtual void drawKingInCheck(bool isWhite)
-	{
+	virtual void drawMoves(GLFWwindow* window, int selectedPieceIndex, bool isWhite, const std::vector<Pieces*> &pieces) = 0;
 
-	}
-
-	virtual void calcTargetSquares(bool isWhite, int index = -1) = 0;
-
+	virtual void calcTargetSquares(bool isWhite, bool currentPlayer, const std::vector<Pieces*> &pieces = std::vector<Pieces*>{}) = 0;
+	
 	virtual void setupPieceOnSquareValues() = 0;
-	
-	virtual void setMoveAllowed(bool value)
-	{
-
-	}
-	
+			
 	virtual const glm::vec2& getPiecePosition(int index, bool isWhite) const = 0;
 
 	virtual void movePiece(const glm::vec2 &targetSquare, int pieceIndex, float deltaTime, bool isWhite, const std::vector<Pieces*> &pieces, GLFWwindow* window) = 0;
@@ -57,25 +55,22 @@ public:
 	
 	virtual void deletePiecePosition(int pieceIndex, bool isWhite, bool isPawnPromote = false) = 0;
 
-	virtual void drawMoves(GLFWwindow* window, int selectedPieceIndex, bool isWhite) = 0;
-
 	virtual void calcDifferenceBetweenSquares(const glm::vec2 &targetSquare, int index, bool isWhite) = 0;
+
+	virtual void clearAvailableTargetSquares() = 0;
 	
-	virtual bool getMoveAllowed(int pieceIndex)
+	//Draws king square as red if in check
+	//Only overriden in king class
+	//------------------------------------
+	virtual void drawKingInCheck(bool isWhite)
 	{
-		return true;
+
 	}
 
-	virtual bool noPieceCanMove()
-	{
-		return false;
-	}
+	//----------------
+	//Normal functions
+	//----------------
 
-	virtual bool isKing(Pieces* pieces)
-	{
-		return false;
-	}
-	
 	void switchPiecePositions(std::vector<glm::vec2> &positions)
 	{
 		for (size_t i = 0; i < positions.size(); i++)
@@ -85,12 +80,14 @@ public:
 	}
 		
 	//Draw pieces visible to user
+	//---------------------------
 	void drawPieces(const unsigned int* texture, const std::vector<glm::vec2> &positions, int startIndex, int endIndex, bool highlight = false) const
 	{
 		Graphics::drawBoard(Graphics::getBoardShader(), texture, positions, startIndex, endIndex, 0.8, highlight);
 	}
 
 	//Draw pieces for mouse hit detection
+	//-----------------------------------
 	void drawPiecesColor(const unsigned int *texture, const std::vector<glm::vec2> &positions,
 		const std::vector<glm::vec3> &colors, int startIndex, int endIndex, bool highlight = false) const
 	{
@@ -105,8 +102,11 @@ public:
 	}
 
 	//Setup initial piece positions
+	//-----------------------------
 	void setupPositions(std::vector<glm::vec2> &positions, std::vector<glm::vec3> &colors, int numPieces, int squareIndex1, int squareIndex2 = -1)
 	{
+		//Per side number of pieces
+		//Pawn
 		if (numPieces == 8)
 		{
 			for (int i = 0; i < numPieces; i++)
@@ -115,6 +115,7 @@ public:
 				colors.push_back(Graphics::genRandomColor());
 			}
 		}
+		//Bishop, Knight, Rook
 		else if(numPieces == 2)
 		{
 			positions.push_back(squarePositions[squareIndex1]);
@@ -122,6 +123,7 @@ public:
 			positions.push_back(squarePositions[squareIndex2]);
 			colors.push_back(Graphics::genRandomColor());
 		}
+		//King, Queen
 		else if (numPieces == 1)
 		{
 			positions.push_back(squarePositions[squareIndex1]);
@@ -129,6 +131,8 @@ public:
 		}
 	}
 		
+	//Returns the index of the color value under mouse cursor
+	//-------------------------------------------------------
 	int pieceColorIndex(const std::vector<glm::vec3> &colors, int numPieces, const glm::vec3* color) const
 	{
 		for (int i = 0; i < numPieces; i++)
@@ -136,20 +140,6 @@ public:
 			if (*color == colors[i])
 			{
 				return i;
-			}
-		}
-		return -1;
-	}
-	
-	int getSquareIndex(const glm::vec2& position)
-	{
-		int index;
-		for (int i = 0; i < 64; i++)
-		{
-			if (squarePositions[i] == position)
-			{
-				index = i;
-				return index;
 			}
 		}
 		return -1;
@@ -163,6 +153,7 @@ std::vector<glm::vec2> Pieces::squarePositions{};
 std::vector<glm::vec3> Pieces::squareColors{};
 std::vector<PieceAttribs> Pieces::squaresAttacked{};
 bool Pieces::kingAttacked = false;
+int Pieces::kingAttackingPieces{ 0 };
 
 #endif
 
