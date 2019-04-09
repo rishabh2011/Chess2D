@@ -16,8 +16,23 @@
     <Filter Include="Header Files\Pieces">
       <UniqueIdentifier>{25c71f59-b299-46c8-af57-09813018ffc6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Rules">
-      <UniqueIdentifier>{0200215c-792d-4661-bb08-42f4f556938f}</UniqueIdentifier>
+    <Filter Include="Header Files\Pieces\Pawn">
+      <UniqueIdentifier>{e0f23876-0a3a-4237-98e5-e56d5a576838}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Pieces\Rook">
+      <UniqueIdentifier>{ef26637d-ab59-4df3-9c5d-05ed716714a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Pieces\Knight">
+      <UniqueIdentifier>{e4d2bffa-7284-4945-9869-df006409f651}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Pieces\Bishop">
+      <UniqueIdentifier>{d3d013bc-a28f-44bc-802b-c6f357a7b4e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Pieces\Queen">
+      <UniqueIdentifier>{f90b48fe-8e1e-400a-a579-6d5fa6293923}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Pieces\King">
+      <UniqueIdentifier>{ccf9715f-2614-4189-ac9a-23e90d9a6ee6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -38,25 +53,7 @@
     <ClInclude Include="stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Files\Classes\Bishop.h">
-      <Filter>Header Files\Pieces</Filter>
-    </ClInclude>
-    <ClInclude Include="Files\Classes\King.h">
-      <Filter>Header Files\Pieces</Filter>
-    </ClInclude>
-    <ClInclude Include="Files\Classes\Knight.h">
-      <Filter>Header Files\Pieces</Filter>
-    </ClInclude>
-    <ClInclude Include="Files\Classes\Pawn.h">
-      <Filter>Header Files\Pieces</Filter>
-    </ClInclude>
     <ClInclude Include="Files\Classes\Pieces.h">
-      <Filter>Header Files\Pieces</Filter>
-    </ClInclude>
-    <ClInclude Include="Files\Classes\Queen.h">
-      <Filter>Header Files\Pieces</Filter>
-    </ClInclude>
-    <ClInclude Include="Files\Classes\Rook.h">
       <Filter>Header Files\Pieces</Filter>
     </ClInclude>
     <ClInclude Include="Files\Classes\Board.h">
@@ -74,23 +71,44 @@
     <ClInclude Include="Moves.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PawnRules.h">
-      <Filter>Header Files\Rules</Filter>
+    <ClInclude Include="Files\Classes\Pieces\Knight\Knight.h">
+      <Filter>Header Files\Pieces\Knight</Filter>
     </ClInclude>
-    <ClInclude Include="RookRules.h">
-      <Filter>Header Files\Rules</Filter>
+    <ClInclude Include="Files\Classes\Pieces\Knight\KnightRules.h">
+      <Filter>Header Files\Pieces\Knight</Filter>
     </ClInclude>
-    <ClInclude Include="KnightRules.h">
-      <Filter>Header Files\Rules</Filter>
+    <ClInclude Include="Files\Classes\Pieces\Bishop\Bishop.h">
+      <Filter>Header Files\Pieces\Bishop</Filter>
     </ClInclude>
-    <ClInclude Include="BishopRules.h">
-      <Filter>Header Files\Rules</Filter>
+    <ClInclude Include="Files\Classes\Pieces\Bishop\BishopRules.h">
+      <Filter>Header Files\Pieces\Bishop</Filter>
     </ClInclude>
-    <ClInclude Include="QueenRules.h">
-      <Filter>Header Files\Rules</Filter>
+    <ClInclude Include="Files\Classes\Pieces\King\King.h">
+      <Filter>Header Files\Pieces\King</Filter>
     </ClInclude>
-    <ClInclude Include="KingRules.h">
-      <Filter>Header Files\Rules</Filter>
+    <ClInclude Include="Files\Classes\Pieces\King\KingRules.h">
+      <Filter>Header Files\Pieces\King</Filter>
+    </ClInclude>
+    <ClInclude Include="Files\Classes\Pieces\Queen\Queen.h">
+      <Filter>Header Files\Pieces\Queen</Filter>
+    </ClInclude>
+    <ClInclude Include="Files\Classes\Pieces\Queen\QueenRules.h">
+      <Filter>Header Files\Pieces\Queen</Filter>
+    </ClInclude>
+    <ClInclude Include="Files\Classes\Pieces\Rook\Rook.h">
+      <Filter>Header Files\Pieces\Rook</Filter>
+    </ClInclude>
+    <ClInclude Include="Files\Classes\Pieces\Rook\RookRules.h">
+      <Filter>Header Files\Pieces\Rook</Filter>
+    </ClInclude>
+    <ClInclude Include="Files\Classes\Pieces\Pawn\Pawn.h">
+      <Filter>Header Files\Pieces\Pawn</Filter>
+    </ClInclude>
+    <ClInclude Include="Files\Classes\Pieces\Pawn\PawnPromotion.h">
+      <Filter>Header Files\Pieces\Pawn</Filter>
+    </ClInclude>
+    <ClInclude Include="Files\Classes\Pieces\Pawn\PawnRules.h">
+      <Filter>Header Files\Pieces\Pawn</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

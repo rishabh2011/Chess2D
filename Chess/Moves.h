@@ -5,12 +5,12 @@
 #define MOVES_H
 
 #include "Files/Classes/Pieces.h"
-#include "PawnRules.h"
-#include "RookRules.h"
-#include "KnightRules.h"
-#include "BishopRules.h"
-#include "QueenRules.h"
-#include "KingRules.h"
+#include "Files/Classes/Pieces/Pawn/PawnRules.h"
+#include "Files/Classes/Pieces/Rook/RookRules.h"
+#include "Files/Classes/Pieces/Knight/KnightRules.h"
+#include "Files/Classes/Pieces/Bishop/BishopRules.h"
+#include "Files/Classes/Pieces/Queen/QueenRules.h"
+#include "Files/Classes/Pieces/King/KingRules.h"
 
 class Moves
 {
@@ -371,7 +371,7 @@ public:
 		{
 			enemyPiece = nullptr;
 			glm::vec2 targetSquare = positions[pieceIndex] + moves[i];
-			if (kingRules.isValidSquare(targetSquare, enemyPiece, isWhite))
+			if (kingRules.isValidSquare(targetSquare, enemyPiece, positions[pieceIndex], isWhite))
 			{
 				for (size_t i = 0; i < Pieces::pieceOnSquare.size(); i++)
 				{

@@ -70,7 +70,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>F:\OpenGL\Chess\Chess;D:\GraphicsProg\OpenGL\Include;$(IncludePath)</IncludePath>
+    <IncludePath>F:\OpenGL\Chess\Chess\Files\Classes;F:\OpenGL\Chess\Chess;D:\GraphicsProg\OpenGL\Include;$(IncludePath)</IncludePath>
     <LibraryPath>D:\GraphicsProg\OpenGL\Libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -133,24 +133,25 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BishopRules.h" />
-    <ClInclude Include="Files\Classes\Bishop.h" />
     <ClInclude Include="Files\Classes\Board.h" />
     <ClInclude Include="Files\Classes\Game.h" />
-    <ClInclude Include="Files\Classes\King.h" />
-    <ClInclude Include="Files\Classes\Knight.h" />
-    <ClInclude Include="Files\Classes\Pawn.h" />
     <ClInclude Include="Files\Classes\Pieces.h" />
-    <ClInclude Include="Files\Classes\Queen.h" />
-    <ClInclude Include="Files\Classes\Rook.h" />
-    <ClInclude Include="KingRules.h" />
-    <ClInclude Include="KnightRules.h" />
+    <ClInclude Include="Files\Classes\Pieces\Bishop\Bishop.h" />
+    <ClInclude Include="Files\Classes\Pieces\Bishop\BishopRules.h" />
+    <ClInclude Include="Files\Classes\Pieces\King\King.h" />
+    <ClInclude Include="Files\Classes\Pieces\King\KingRules.h" />
+    <ClInclude Include="Files\Classes\Pieces\Knight\Knight.h" />
+    <ClInclude Include="Files\Classes\Pieces\Knight\KnightRules.h" />
+    <ClInclude Include="Files\Classes\Pieces\Pawn\Pawn.h" />
+    <ClInclude Include="Files\Classes\Pieces\Pawn\PawnPromotion.h" />
+    <ClInclude Include="Files\Classes\Pieces\Pawn\PawnRules.h" />
+    <ClInclude Include="Files\Classes\Pieces\Queen\Queen.h" />
+    <ClInclude Include="Files\Classes\Pieces\Queen\QueenRules.h" />
+    <ClInclude Include="Files\Classes\Pieces\Rook\Rook.h" />
+    <ClInclude Include="Files\Classes\Pieces\Rook\RookRules.h" />
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="Moves.h" />
-    <ClInclude Include="PawnRules.h" />
-    <ClInclude Include="QueenRules.h" />
-    <ClInclude Include="RookRules.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>

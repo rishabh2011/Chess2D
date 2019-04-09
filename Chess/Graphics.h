@@ -112,6 +112,11 @@ public:
 		return piecesColorShader;
 	}
 
+	static unsigned int getVAO()
+	{
+		return VAO;
+	}
+
 	~Graphics()
 	{
 		delete boardShader;

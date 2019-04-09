@@ -4,12 +4,12 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "Pawn.h"
-#include "Rook.h"
-#include "Knight.h"
-#include "Bishop.h"
-#include "Queen.h"
-#include "King.h"
+#include "Pieces/Pawn/Pawn.h"
+#include "Pieces/Rook/Rook.h"
+#include "Pieces/Knight/Knight.h"
+#include "Pieces/Bishop/Bishop.h"
+#include "Pieces/Queen/Queen.h"
+#include "Pieces/King/King.h"
 #include "Board.h"
 #include <Mouse.h>
 
@@ -29,6 +29,8 @@ public:
 	void renderLoop(GLFWwindow* window) 
 	{
 		glEnable(GL_MULTISAMPLE);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_STENCIL_TEST);
 		glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
 		
@@ -57,6 +59,10 @@ public:
 	~Game()
 	{
 		delete board;
+		for (size_t i{ 0 }; i < pieces.size(); i++)
+		{
+			delete pieces[i];
+		}
 	}
 		
 private:

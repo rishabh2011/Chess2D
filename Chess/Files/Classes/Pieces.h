@@ -7,6 +7,9 @@
 #include <Graphics.h>
 #include <vector>
 
+//Need the enum as class interdependency errors occur when #including queen, bishop, rook in kingRules class
+enum class Piece {PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING};
+
 class Pieces;
 
 //Struct holds all necessary attributes of a piece
@@ -15,8 +18,9 @@ struct PieceAttribs
 	glm::vec2 position;
 	int index;  //piece index within its vector
 	bool isWhite; //piece white or black
+	Pieces *piece;
+	Piece pieceEnum;  //piece type
 	bool attackingOpponentKing = false;  
-	Pieces* piece;  //piece type
 };
 
 class Pieces
