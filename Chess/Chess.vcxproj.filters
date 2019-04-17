@@ -110,5 +110,8 @@
     <ClInclude Include="Files\Classes\Pieces\Pawn\PawnRules.h">
       <Filter>Header Files\Pieces\Pawn</Filter>
     </ClInclude>
+    <ClInclude Include="UndoMoves.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

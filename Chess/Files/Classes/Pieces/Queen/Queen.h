@@ -8,6 +8,7 @@
 #include <Board.h>
 #include <Pieces/King/King.h>
 #include <Moves.h>
+#include <UndoMoves.h>
 
 class Queen : public Pieces
 {
@@ -143,8 +144,15 @@ public:
 		}
 	}
 
+	virtual void addSelectedPieceDataToOnePieceAffectedMovesStack(bool isWhite, int selectedPieceIndex) override
+	{
+		TrackMoves::addSelectedPieceDataToOnePieceAffectedMovesStack(isWhite, selectedPieceIndex, whiteQueenPositions, blackQueenPositions);
+	}
+
 	virtual void movePiece(const glm::vec2 &targetSquare, int pieceIndex, float deltaTime, bool isWhite, const std::vector<Pieces*> &pieces, GLFWwindow* window) override
 	{
+		draw(pieceIndex, isWhite);
+
 		if (isWhite)
 		{
 			moves.movePiece(targetSquare, diffBetweenSquares, pieceIndex, deltaTime, queenMoves, whiteQueenPositions);
@@ -215,18 +223,25 @@ public:
 	{
 		if (isWhite)
 		{
-			//Add a new queen to the queen position vector 
+			//Add a new Queen to the Queen position vector 
 			whiteQueenPositions.push_back(*targetSquare);
-			//Also generate a new color for the new queen
+			//Also generate a new color for the new Queen
 			whiteQueenColors.push_back(Graphics::genRandomColor());
+			Board::highlightMove.second.index = whiteQueenPositions.size() - 1;
+			Board::highlightMove.second.piece = this;
 		}
 		else
 		{
-			//Add a new queen to the queen position vector 
+			//Add a new Queen to the Queen position vector 
 			blackQueenPositions.push_back(*targetSquare);
-			//Also generate a new color for the new queen
+			//Also generate a new color for the new Queen
 			blackQueenColors.push_back(Graphics::genRandomColor());
+			Board::highlightMove.second.index = whiteQueenPositions.size() - 1;
+			Board::highlightMove.second.piece = this;
 		}
+		TrackMoves::addPromotedPieceDataToThreePiecesAffectedMovesStack(isWhite, this);
+		Board::highlightMove.second.isWhite = isWhite;
+		Board::highlightMovesStack.push(Board::highlightMove);
 	}
 
 	virtual void calcDifferenceBetweenSquares(const glm::vec2 &targetSquare, int index, bool isWhite) override
@@ -241,6 +256,18 @@ public:
 		}
 	}
 
+	virtual void restorePreviousMove(PieceAttribs attribs)
+	{
+		TrackMoves::restorePreviousMove(attribs, whiteQueenPositions, blackQueenPositions);
+	}
+
+	virtual void deletePromotedPiece(bool isWhite) override
+	{
+		TrackMoves::deleteGeneratedPiece(isWhite, whiteQueenPositions, blackQueenPositions);
+	}
+
+	//Returns the queen texture used in the pawnPromotion UI
+	//------------------------------------------------------
 	static unsigned int getQueenTexture(bool isWhite)
 	{
 		if (isWhite)
@@ -312,14 +339,14 @@ private:
 		//a maximum of 7 squares per direction
 		for (int i = 0; i < 7; i++) 
 		{
-			queenMoves.push_back(glm::vec2((i + 1) * 0.25, 0.0));
-			queenMoves.push_back(-glm::vec2((i + 1) * 0.25, 0.0));
-			queenMoves.push_back(glm::vec2(0.0, (i + 1) * 0.25));
-			queenMoves.push_back(-glm::vec2(0.0, (i + 1) * 0.25));
-			queenMoves.push_back(glm::vec2((i + 1) * 0.25, (i + 1) * 0.25));
-			queenMoves.push_back(-glm::vec2((i + 1) * 0.25, (i + 1) * 0.25));
-			queenMoves.push_back(glm::vec2(-((i + 1) * 0.25), (i + 1) * 0.25));
-			queenMoves.push_back(-glm::vec2(-((i + 1) * 0.25), (i + 1) * 0.25));
+			queenMoves.push_back(glm::vec2((i + 1) * squareSizeX, 0.0));
+			queenMoves.push_back(-glm::vec2((i + 1) * squareSizeX, 0.0));
+			queenMoves.push_back(glm::vec2(0.0, (i + 1) * squareSizeY));
+			queenMoves.push_back(-glm::vec2(0.0, (i + 1) * squareSizeY));
+			queenMoves.push_back(glm::vec2((i + 1) * squareSizeX, (i + 1) * squareSizeY));
+			queenMoves.push_back(-glm::vec2((i + 1) * squareSizeX, (i + 1) * squareSizeY));
+			queenMoves.push_back(glm::vec2(-((i + 1) * squareSizeX), (i + 1) * squareSizeY));
+			queenMoves.push_back(-glm::vec2(-((i + 1) * squareSizeX), (i + 1) * squareSizeY));
 		}
 	}
 };

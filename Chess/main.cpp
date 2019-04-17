@@ -14,7 +14,8 @@ GLFWwindow* window;
 int main()
 {
 	initLibraries();
-	Graphics::setShadersAndVAO();
+	Graphics::setupSquaresColorBuffer();
+	Graphics::setupPiecesColorBuffer();
 	Game game;
 	game.renderLoop(window);
 	return 1;

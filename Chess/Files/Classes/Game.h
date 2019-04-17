@@ -21,9 +21,9 @@ public:
 	Game()
 	{
 		board = new Board;
-		board->loadTexture();
 		initializePieces();
 	}
+
 
 	//Starts game rendering loop
 	void renderLoop(GLFWwindow* window) 
@@ -74,13 +74,26 @@ private:
 	//Framerate variables
 	float lastFrame = 0.0f;
 	float deltaTime = 0.0f;
-		
+
+	bool zPressed{ false };
 	//Process user inputs
 	void processInput(GLFWwindow* window)
 	{
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		{
 			glfwSetWindowShouldClose(window, true);
+		}
+		else if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+		{
+			if (!zPressed)
+			{
+				Board::restorePreviousMove(pieces);
+				zPressed = true;
+			}
+		}
+		else if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_RELEASE)
+		{
+			zPressed = false;
 		}
 		Mouse::processMouse(window);
 	}
@@ -93,6 +106,7 @@ private:
 		pieces.push_back(new Bishop());
 		pieces.push_back(new Queen());
 		pieces.push_back(new King());
+		pieces.shrink_to_fit();
 	}
 };
 

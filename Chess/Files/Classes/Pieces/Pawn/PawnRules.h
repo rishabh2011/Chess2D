@@ -9,6 +9,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <Pieces.h>
 #include <Board.h>
+#include <UndoMoves.h>
 
 class PawnRules
 {
@@ -113,7 +114,7 @@ public:
 	bool insideBoard(glm::vec2 &targetSquare)
 	{
 		//X and Y limits of board
-		if (targetSquare.x > 0.875 || targetSquare.x < -0.875 || targetSquare.y > 0.875 || targetSquare.y < -0.875)
+		if (targetSquare.x > Board::boardLimitX || targetSquare.x < -Board::boardLimitX || targetSquare.y > Board::boardLimitY || targetSquare.y < -Board::boardLimitY)
 		{
 			return false;
 		}
@@ -130,7 +131,7 @@ public:
 			return false;
 		}
 		//Check Double square move
-		else if (targetSquare.y == (pawnPositions[pieceIndex].y + Board::squareSizeY * 2.0))
+		else if (targetSquare.y == (pawnPositions[pieceIndex].y + squareSizeY * 2.0))
 		{
 			//If pawn is at initial position
 			if (pawnPositions[pieceIndex] == initPawnPositions[pieceIndex])
@@ -190,6 +191,66 @@ public:
 			}
 		}
 		return false;
+	}
+
+	//Checks for the possibility of enPassant and adds relevant squares to the target squares vector
+	//----------------------------------------------------------------------------------------------
+	void enPassantMove(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, const std::vector<glm::vec2> &pawnPositions)
+	{
+		//Needs the values stored in highlightMovesStack to check for enPassant
+		if (!Board::highlightMovesStack.empty())
+		{
+			auto previousMovedPiece = Board::highlightMovesStack.top();
+			glm::vec2 rightSquare = pawnPositions[pieceIndex] + glm::vec2(squareSizeX, 0.0);
+			glm::vec2 leftSquare = pawnPositions[pieceIndex] - glm::vec2(squareSizeX, 0.0);
+			//Check if the squares next to the pawn has a pawn piece on it and that the pawn had moved double squares in the previous move
+			for (size_t i{ 0 }; i < Pieces::pieceOnSquare.size(); i++)
+			{
+				//right square has a piece on it
+				if (rightSquare == Pieces::pieceOnSquare[i].position)
+				{
+					//that piece is a pawn
+					if (Pieces::pieceOnSquare[i].pieceEnum == Piece::PAWN)
+					{
+						//Check if this pawn was moved in the previous move
+						//Negative value is checked as pieces have been switched
+						if (Pieces::pieceOnSquare[i].position == -previousMovedPiece.first.second)
+						{
+							//See if it was a double square move
+							glm::vec2 diffBetweenOldAndNewSquare = previousMovedPiece.first.second - previousMovedPiece.first.first;
+							if (diffBetweenOldAndNewSquare.y == 2.0 * squareSizeY)
+							{
+								PieceAttribs square;
+								square.position = pawnPositions[pieceIndex] + moves[0];
+								square.piece = Pieces::pieceOnSquare[i].piece;
+								square.index = Pieces::pieceOnSquare[i].index;
+								square.rightEnPassantMove = true;
+								targetSquares.push_back(square);
+							}
+						}
+					}
+				}
+				else if (leftSquare == Pieces::pieceOnSquare[i].position)
+				{
+					if (Pieces::pieceOnSquare[i].pieceEnum == Piece::PAWN)
+					{
+						if (Pieces::pieceOnSquare[i].position == -previousMovedPiece.first.second)
+						{
+							glm::vec2 diffBetweenOldAndNewSquare = previousMovedPiece.first.second - previousMovedPiece.first.first;
+							if (diffBetweenOldAndNewSquare.y == 2.0 * squareSizeY)
+							{
+								PieceAttribs square;
+								square.position = pawnPositions[pieceIndex] + moves[1];
+								square.piece = Pieces::pieceOnSquare[i].piece;
+								square.index = Pieces::pieceOnSquare[i].index;
+								square.leftEnPassantMove = true;
+								targetSquares.push_back(square);
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	//When king is in check this function allows only those moves that prevent the king from being attacked
@@ -255,7 +316,7 @@ public:
 		//Restore the original kingAttackingPieces and kingAttacked values as the calcTargetSquares function above may have changed it depending on new squaresAttacked
 		Pieces::kingAttackingPieces = tempKingAttackingPieces;
 		Pieces::kingAttacked = tempKingAttacked;
-
+		
 		//Iterate through the new squaresAttacked vector to determine the target squares threatened by the opponent piece which is directly attacking the king
 		for (size_t i = 0; i < Pieces::squaresAttacked.size(); i++)
 		{
@@ -282,7 +343,7 @@ public:
 		if (targetSquare.x == pawnPositions[pieceIndex].x)
 		{
 			//Check if double square move is possible
-			if (targetSquare.y == (pawnPositions[pieceIndex].y + Board::squareSizeY * 2.0))
+			if (targetSquare.y == (pawnPositions[pieceIndex].y + squareSizeY * 2.0))
 			{
 				if (pawnPositions[pieceIndex] == initPawnPositions[pieceIndex])
 				{
@@ -363,6 +424,7 @@ private:
 	bool tempKingAttacked;  //temporarily stores the original kingAttacked value as it changes within checkPiecePinned function
 	std::vector<PieceAttribs> tempSquaresAttacked;  //temporarily stores the original squareAttacked vector values as it changes within checkPiecePinned function
 	std::vector<PieceAttribs> tempPieceOnSquare;  //temporarily stores the original pieceOnSquare vector values as it changes within checkPiecePinned function
+	
 };
 
 #endif

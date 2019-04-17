@@ -6,6 +6,7 @@
 
 #include <Pieces.h>
 #include <Board.h>
+#include <UndoMoves.h>
 
 class Knight : public Pieces
 {
@@ -141,8 +142,15 @@ public:
 		}
 	}
 
+	virtual void addSelectedPieceDataToOnePieceAffectedMovesStack(bool isWhite, int selectedPieceIndex) override
+	{
+		TrackMoves::addSelectedPieceDataToOnePieceAffectedMovesStack(isWhite, selectedPieceIndex, whiteKnightPositions, blackKnightPositions);
+	}
+
 	virtual void movePiece(const glm::vec2 &targetSquare, int pieceIndex, float deltaTime, bool isWhite, const std::vector<Pieces*> &pieces, GLFWwindow* window) override
 	{
+		draw(pieceIndex, isWhite);
+
 		if (isWhite)
 		{
 			moves.movePiece(targetSquare, diffBetweenSquares, pieceIndex, deltaTime, knightMoves, whiteKnightPositions);
@@ -213,18 +221,25 @@ public:
 	{
 		if (isWhite)
 		{
-			//Add a new knight to the knight position vector 
+			//Add a new Knight to the Knight position vector 
 			whiteKnightPositions.push_back(*targetSquare);
-			//Also generate a new color for the new knight
+			//Also generate a new color for the new Knight
 			whiteKnightColors.push_back(Graphics::genRandomColor());
+			Board::highlightMove.second.index = whiteKnightPositions.size() - 1;
+			Board::highlightMove.second.piece = this;
 		}
 		else
 		{
-			//Add a new knight to the knight position vector 
+			//Add a new Knight to the Knight position vector 
 			blackKnightPositions.push_back(*targetSquare);
-			//Also generate a new color for the new knight
+			//Also generate a new color for the new Knight
 			blackKnightColors.push_back(Graphics::genRandomColor());
+			Board::highlightMove.second.index = whiteKnightPositions.size() - 1;
+			Board::highlightMove.second.piece = this;
 		}
+		TrackMoves::addPromotedPieceDataToThreePiecesAffectedMovesStack(isWhite, this);
+		Board::highlightMove.second.isWhite = isWhite;
+		Board::highlightMovesStack.push(Board::highlightMove);
 	}
 
 	virtual void calcDifferenceBetweenSquares(const glm::vec2 &targetSquare, int index, bool isWhite) override
@@ -239,6 +254,18 @@ public:
 		}
 	}
 
+	virtual void restorePreviousMove(PieceAttribs attribs)
+	{
+		TrackMoves::restorePreviousMove(attribs, whiteKnightPositions, blackKnightPositions);
+	}
+
+	virtual void deletePromotedPiece(bool isWhite) override
+	{
+		TrackMoves::deleteGeneratedPiece(isWhite, whiteKnightPositions, blackKnightPositions);
+	}
+
+	//Returns the knight texture used in the pawnPromotion UI
+	//-------------------------------------------------------
 	static unsigned int getKnightTexture(bool isWhite)
 	{
 		if (isWhite)
@@ -307,10 +334,10 @@ private:
 	void setKnightMoves()
 	{
 		//Knight can move in an L shape in 8 different directions
-		knightMoves.push_back(glm::vec2(0.25, 0.5));
-		knightMoves.push_back(glm::vec2(-0.25, 0.5));
-		knightMoves.push_back(glm::vec2(0.5, 0.25));
-		knightMoves.push_back(glm::vec2(-0.5, 0.25));
+		knightMoves.push_back(glm::vec2(squareSizeX, squareSizeY * 2.0));
+		knightMoves.push_back(glm::vec2(-squareSizeX, squareSizeY * 2.0));
+		knightMoves.push_back(glm::vec2(squareSizeX * 2.0, squareSizeY));
+		knightMoves.push_back(glm::vec2(-squareSizeX * 2.0, squareSizeY));
 		knightMoves.push_back(-knightMoves[0]);
 		knightMoves.push_back(-knightMoves[1]);
 		knightMoves.push_back(-knightMoves[2]);

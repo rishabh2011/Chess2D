@@ -265,7 +265,7 @@ public:
 	bool insideBoard(const glm::vec2 &targetSquare)
 	{
 		//X and Y limits of board
-		if (targetSquare.x > 0.875 || targetSquare.x < -0.875 || targetSquare.y > 0.875 || targetSquare.y < -0.875)
+		if (targetSquare.x > Board::boardLimitX || targetSquare.x < -Board::boardLimitX || targetSquare.y > Board::boardLimitY || targetSquare.y < -Board::boardLimitY)
 		{
 			return false;
 		}

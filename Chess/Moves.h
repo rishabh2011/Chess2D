@@ -56,7 +56,7 @@ public:
 	//Calculate current player available moves
 	//These functions calculate the squares available to move for every piece on the board 
 	//------------------------------------------------------------------------------------
-	
+
 	void calcPawnTargetSquares(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, const std::vector<glm::vec2> &positions, std::vector<glm::vec2> initPawnPositions, bool isWhite, const std::vector<Pieces*> &pieces)
 	{
 		//If more than one opponent pieces attacking king, this piece cannot move
@@ -67,7 +67,7 @@ public:
 		//Pawns are switched when black
 		//There is index mismatching as only 1 initPawnPositions vector is stored
 		//Hence reverse x values so that indexes match for black pieces
-		if(!isWhite)
+		if (!isWhite)
 		{
 			for (size_t i = 0; i < initPawnPositions.size(); i++)
 			{
@@ -130,6 +130,7 @@ public:
 			}
 		}
 		pawnRules.setPieceBlockingMovement(false);
+		pawnRules.enPassantMove(targetSquares, pieceIndex, moves, positions);
 	}
 
 	void calcRookTargetSquares(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite, const std::vector<Pieces*> &pieces)
@@ -385,6 +386,15 @@ public:
 				targetSquares.push_back(squares);
 			}
 		}
+		//Calculate king castling squares
+		if (isWhite)
+		{
+			kingRules.calcCastlingSquares(targetSquares, Pieces::whiteKingMoved, Pieces::whiteRookMoved, isWhite, positions[0]);
+		}
+		else
+		{
+			kingRules.calcCastlingSquares(targetSquares, Pieces::blackKingMoved, Pieces::blackRookMoved, isWhite, positions[0]);
+		}
 	}
 
 	//---------------------------------------------------------------------
@@ -415,7 +425,7 @@ public:
 		}
 		pawnRules.setPieceBlockingMovement(false);
 	}
-	
+
 	void calcRookAttackedSquares(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
 	{
 		bool kingAttacked = false;
@@ -444,7 +454,7 @@ public:
 		}
 		rookRules.setDefaultPieceBlockValues(false);
 	}
-	
+
 	void calcKnightAttackedSquares(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
 	{
 		PieceAttribs squares;
@@ -467,7 +477,7 @@ public:
 			}
 		}
 	}
-	
+
 	void calcBishopAttackedSquares(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
 	{
 		bool kingAttacked = false;
@@ -496,7 +506,7 @@ public:
 		}
 		bishopRules.setDefaultBlockValues(false);
 	}
-	
+
 	void calcQueenAttackedSquares(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
 	{
 		bool kingAttacked = false;
@@ -525,7 +535,7 @@ public:
 		}
 		queenRules.setDefaultBlockValues(false);
 	}
-	
+
 	void calcKingAttackedSquares(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite)
 	{
 		PieceAttribs squares;
@@ -548,7 +558,7 @@ public:
 			}
 		}
 	}
-	
+
 private:
 
 	Pieces* enemyPiece{ nullptr };
@@ -560,5 +570,6 @@ private:
 	KingRules kingRules;
 	float moveSpeed = 2.0f;
 };
+	
 
 #endif

@@ -8,6 +8,7 @@
 #include <Board.h>
 #include <Pieces/King/King.h>
 #include <Moves.h>
+#include <UndoMoves.h>
 
 class Rook : public Pieces
 {
@@ -143,8 +144,22 @@ public:
 		}
 	}
 
+	virtual void addSelectedPieceDataToOnePieceAffectedMovesStack(bool isWhite, int selectedPieceIndex) override
+	{
+		TrackMoves::addSelectedPieceDataToOnePieceAffectedMovesStack(isWhite, selectedPieceIndex, whiteRookPositions, blackRookPositions);
+	}
+
+	//Calls TrackMoves function for the same to add the castled rook's data to the stack
+	//----------------------------------------------------------------------------------
+	virtual void addCastledRookDataToTwoPiecesAffectedMovesStack(bool isWhite, bool castlingKingSide, bool castlingQueenSide) override
+	{
+		TrackMoves::addCastledRookDataToTwoPiecesAffectedMovesStack(isWhite, castlingKingSide, castlingQueenSide, whiteRookPositions, blackRookPositions);
+	}
+
 	virtual void movePiece(const glm::vec2 &targetSquare, int pieceIndex, float deltaTime, bool isWhite, const std::vector<Pieces*> &pieces, GLFWwindow* window) override
 	{
+		draw(pieceIndex, isWhite);
+
 		if (isWhite)
 		{
 			moves.movePiece(targetSquare, diffBetweenSquares, pieceIndex, deltaTime, rookMoves, whiteRookPositions);
@@ -152,6 +167,47 @@ public:
 		else
 		{
 			moves.movePiece(targetSquare, diffBetweenSquares, pieceIndex, deltaTime, rookMoves, blackRookPositions);
+		}
+		//Increment this rook's move once
+		if (!rookMoveIncremented)
+		{
+			incrementRookMove(pieceIndex, isWhite);
+			rookMoveIncremented = true;
+		}
+	}
+
+	//Moves the rook to its designated target square on king castle
+	//-------------------------------------------------------------
+	virtual void moveCastlingRook(bool isWhite, float deltaTime, const std::vector<Pieces*> &pieces, GLFWwindow* window) override
+	{
+		float queenSideRookMoveSpeed = 1.05f;  //multiply deltaTime with this value as queen side rook has to travel greater distance
+		if (isWhite)
+		{
+			if (Board::getCastlingKingSide())
+			{
+				diffBetweenSquares = whiteKingSideRookCastlingSquare - initRookPositions[1];
+				movePiece(whiteKingSideRookCastlingSquare, 1, deltaTime, isWhite, pieces, window);
+			}
+			else if (Board::getCastlingQueenSide())
+			{
+				diffBetweenSquares = whiteQueenSideRookCastlingSquare - initRookPositions[0];
+				//multiplied deltaTime with 1.2 as this rook has to travel 3 squares compared to king's 2 squares within the same time
+				movePiece(whiteQueenSideRookCastlingSquare, 0, deltaTime * queenSideRookMoveSpeed, isWhite, pieces, window);  
+			}
+		}
+		else
+		{
+			if (Board::getCastlingKingSide())
+			{
+				diffBetweenSquares = blackKingSideRookCastlingSquare - initRookPositions[0];
+				movePiece(blackKingSideRookCastlingSquare, 1, deltaTime, isWhite, pieces, window);
+			}
+			else if (Board::getCastlingQueenSide())
+			{
+				diffBetweenSquares = blackQueenSideRookCastlingSquare - initRookPositions[1];
+				//multiplied deltaTime with 1.2 as this rook has to travel 3 squares compared to king's 2 squares within the same time
+				movePiece(blackQueenSideRookCastlingSquare, 0, deltaTime * queenSideRookMoveSpeed, isWhite, pieces, window);
+			}
 		}
 	}
 
@@ -219,6 +275,8 @@ public:
 			whiteRookPositions.push_back(*targetSquare);
 			//Also generate a new color for the new rook
 			whiteRookColors.push_back(Graphics::genRandomColor());
+			Board::highlightMove.second.index = whiteRookPositions.size() - 1;
+			Board::highlightMove.second.piece = this;
 		}
 		else
 		{
@@ -226,7 +284,12 @@ public:
 			blackRookPositions.push_back(*targetSquare);
 			//Also generate a new color for the new rook
 			blackRookColors.push_back(Graphics::genRandomColor());
+			Board::highlightMove.second.index = blackRookPositions.size() - 1;
+			Board::highlightMove.second.piece = this;
 		}
+		TrackMoves::addPromotedPieceDataToThreePiecesAffectedMovesStack(isWhite, this);
+		Board::highlightMove.second.isWhite = isWhite;
+		Board::highlightMovesStack.push(Board::highlightMove);
 	}
 
 	virtual void calcDifferenceBetweenSquares(const glm::vec2 &targetSquare, int index, bool isWhite) override
@@ -241,6 +304,18 @@ public:
 		}
 	}
 
+	virtual void restorePreviousMove(PieceAttribs attribs)
+	{
+		TrackMoves::restorePreviousMove(attribs, whiteRookPositions, blackRookPositions);
+	}
+
+	virtual void deletePromotedPiece(bool isWhite) override
+	{
+		TrackMoves::deleteGeneratedPiece(isWhite, whiteRookPositions, blackRookPositions);
+	}
+
+	//Returns the rook texture used in the pawnPromotion UI
+	//-----------------------------------------------------
 	static unsigned int getRookTexture(bool isWhite)
 	{
 		if (isWhite)
@@ -252,7 +327,7 @@ public:
 			return blackRook;
 		}
 	}
-		
+			
 	virtual ~Rook() = default;
 	
 private:
@@ -269,7 +344,15 @@ private:
 
 	Moves moves;
 	std::vector<glm::vec2> rookMoves;
-		
+	bool rookMoveIncremented{ false };
+			
+	//Castling variables
+	glm::vec2 whiteKingSideRookCastlingSquare;
+	glm::vec2 whiteQueenSideRookCastlingSquare;
+	glm::vec2 blackKingSideRookCastlingSquare;
+	glm::vec2 blackQueenSideRookCastlingSquare;
+	std::vector<glm::vec2> initRookPositions;
+	
 	glm::vec3 targetSquareColor{ 0.0, 0.8, 1.0 };
 	glm::vec3 enemySquareColor{ 1.0, 0.0, 0.0 };
 			
@@ -278,11 +361,23 @@ private:
 		setRookMoves();
 		Pieces::setupPositions(whiteRookPositions, whiteRookColors, 2, 0, 7);
 		Pieces::setupPositions(blackRookPositions, blackRookColors, 2, 56, 63);
-		//whiteRookPositions[0] = squarePositions[20];
+		for (size_t i{ 0 }; i < whiteRookPositions.size(); i++)
+		{
+			initRookPositions.push_back(whiteRookPositions[i]);
+		}
+		whiteKingSideRookCastlingSquare.x = initRookPositions[1].x - squareSizeX * 2.0;
+		whiteKingSideRookCastlingSquare.y = -Board::boardLimitY;
+		whiteQueenSideRookCastlingSquare.x = initRookPositions[0].x + squareSizeX * 3.0;
+		whiteQueenSideRookCastlingSquare.y = -Board::boardLimitY;
+		blackKingSideRookCastlingSquare.x = initRookPositions[0].x + squareSizeX * 2.0;
+		blackKingSideRookCastlingSquare.y = -Board::boardLimitY;
+		blackQueenSideRookCastlingSquare.x = initRookPositions[1].x - squareSizeX * 3.0;
+		blackQueenSideRookCastlingSquare.y = -Board::boardLimitY;
 	}
 
 	virtual void setupPieceOnSquareValues() override
 	{
+		rookMoveIncremented = false;
 		PieceAttribs square;
 		for (size_t i = 0; i < whiteRookPositions.size(); i++)
 		{
@@ -312,10 +407,10 @@ private:
 		//Rook can move straight in 4 directions for a maximum of 7 squares
 		for (int i = 0; i < 7; i++)
 		{
-			rookMoves.push_back(glm::vec2((i + 1) * 0.25, 0.0));
-			rookMoves.push_back(-glm::vec2((i + 1) * 0.25, 0.0));
-			rookMoves.push_back(glm::vec2(0.0, (i + 1) * 0.25));
-			rookMoves.push_back(-glm::vec2(0.0, (i + 1) * 0.25));
+			rookMoves.push_back(glm::vec2((i + 1) * squareSizeX, 0.0));
+			rookMoves.push_back(-glm::vec2((i + 1) * squareSizeX, 0.0));
+			rookMoves.push_back(glm::vec2(0.0, (i + 1) * squareSizeY));
+			rookMoves.push_back(-glm::vec2(0.0, (i + 1) * squareSizeY));
 		}
 	}
 };

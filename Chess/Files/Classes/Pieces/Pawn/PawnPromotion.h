@@ -5,6 +5,7 @@
 #define PAWNPROMOTION_H
 
 #include "Graphics.h"
+#include <Pieces.h>
 #include <Pieces/Rook/Rook.h>
 #include <Pieces/Knight/Knight.h>
 #include <Pieces/Bishop/Bishop.h>
@@ -64,13 +65,15 @@ private:
 	//-----------------------------------
 	void drawPieces(GLFWwindow* window, bool isWhite)
 	{
+		glBindFramebuffer(GL_FRAMEBUFFER, Graphics::getPiecesColorBuffer());
+		glClear(GL_COLOR_BUFFER_BIT);
+
 		float offsetX = scaleX / 4.0;  
 		glBindVertexArray(Graphics::getVAO());
 
 		Shader* shader = Graphics::getPiecesColorShader();
 		shader->use();
-		shader->setFloat("scale", 0.8);
-
+		glm::mat4 model;
 		glm::vec3 color;
 
 		//Draw pieces in a color from pieceColors array
@@ -78,22 +81,33 @@ private:
 		color = pieceColors[0] / 255.0f;
 		shader->setVec3("color", color);
 		glBindTexture(GL_TEXTURE_2D, Rook::getRookTexture(isWhite));
-		shader->setVec2("offset", glm::vec2(0.0 - offsetX * 3.0, 0.0));
+		model = glm::translate(model, glm::vec3(0.0 - offsetX * 3.0, 0.0, 0.0));
+		model = glm::scale(model, glm::vec3(0.8));
+		shader->setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		color = pieceColors[1] / 255.0f;
 		shader->setVec3("color", color);
 		glBindTexture(GL_TEXTURE_2D, Knight::getKnightTexture(isWhite));
-		shader->setVec2("offset", glm::vec2(0.0 - offsetX, 0.0));
+		model = glm::mat4();
+		model = glm::translate(model, glm::vec3(0.0 - offsetX, 0.0, 0.0));
+		model = glm::scale(model, glm::vec3(0.8));
+		shader->setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		color = pieceColors[2] / 255.0f;
 		shader->setVec3("color", color);
 		glBindTexture(GL_TEXTURE_2D, Bishop::getBishopTexture(isWhite));
-		shader->setVec2("offset", glm::vec2(0.0 + offsetX, 0.0));
+		model = glm::mat4();
+		model = glm::translate(model, glm::vec3(0.0 + offsetX, 0.0, 0.0));
+		model = glm::scale(model, glm::vec3(0.8));
+		shader->setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		color = pieceColors[3] / 255.0f;
 		shader->setVec3("color", color);
 		glBindTexture(GL_TEXTURE_2D, Queen::getQueenTexture(isWhite));
-		shader->setVec2("offset", glm::vec2(0.0 + offsetX * 3.0, 0.0));
+		model = glm::mat4();
+		model = glm::translate(model, glm::vec3(0.0 + offsetX * 3.0, 0.0, 0.0));
+		model = glm::scale(model, glm::vec3(0.8));
+		shader->setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		processInput(window, isWhite);
@@ -102,19 +116,32 @@ private:
 		//--------------------
 		shader = Graphics::getBoardShader();
 		shader->use();
-		shader->setFloat("scale", 0.8);
 		glBindTexture(GL_TEXTURE_2D, Rook::getRookTexture(isWhite));
-		shader->setVec2("offset", glm::vec2(0.0 - offsetX * 3.0, 0.0));
+		model = glm::mat4();
+		model = glm::translate(model, glm::vec3(0.0 - offsetX * 3.0, 0.0, 0.0));
+		model = glm::scale(model, glm::vec3(0.8));
+		shader->setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindTexture(GL_TEXTURE_2D, Knight::getKnightTexture(isWhite));
-		shader->setVec2("offset", glm::vec2(0.0 - offsetX, 0.0));
+		model = glm::mat4();
+		model = glm::translate(model, glm::vec3(0.0 - offsetX, 0.0, 0.0));
+		model = glm::scale(model, glm::vec3(0.8));
+		shader->setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindTexture(GL_TEXTURE_2D, Bishop::getBishopTexture(isWhite));
-		shader->setVec2("offset", glm::vec2(0.0 + offsetX, 0.0));
+		model = glm::mat4();
+		model = glm::translate(model, glm::vec3(0.0 + offsetX, 0.0, 0.0));
+		model = glm::scale(model, glm::vec3(0.8));
+		shader->setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindTexture(GL_TEXTURE_2D, Queen::getQueenTexture(isWhite));
-		shader->setVec2("offset", glm::vec2(0.0 + offsetX * 3.0, 0.0));
+		model = glm::mat4();
+		model = glm::translate(model, glm::vec3(0.0 + offsetX * 3.0, 0.0, 0.0));
+		model = glm::scale(model, glm::vec3(0.8));
+		shader->setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	//Highlights the piece under mouse cursor and sets pawnPromotion value to that piece
@@ -151,14 +178,18 @@ private:
 			break;
 		}
 		
+		glm::mat4 model;
+		model = glm::translate(model, glm::vec3(offset, 0.0));
+		model = glm::scale(model, glm::vec3(0.9));
 		piecesColorShader->use();
-		piecesColorShader->setVec2("offset", offset);
-		piecesColorShader->setFloat("scale", 0.9);
-		piecesColorShader->setVec3("color", glm::vec3(0.0, 1.0, 0.0));
+		piecesColorShader->setMat4("model", model);
+		piecesColorShader->setVec3("color", glm::vec3(1.0, 0.0, 0.0));
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+		model = glm::mat4();
+		model = glm::translate(model, glm::vec3(offset, 0.0));
+		model = glm::scale(model, glm::vec3(0.8));
 		boardShader->use();
-		boardShader->setFloat("scale", 0.8);
-		boardShader->setVec2("offset", offset);
+		boardShader->setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 	}
 	
@@ -167,7 +198,7 @@ private:
 	void processInput(GLFWwindow* window, bool isWhite)
 	{
 		promotionPiece = PawnPromotionPiece::NO_PIECE;
-		glm::vec3 color = Mouse::getPixelColorUnderMouse(window);
+		glm::vec3 color = Mouse::getPixelColorUnderMouse(window, Graphics::getPiecesColorBuffer());
 		//Iterate through pieceColors vector to get the color and highlight that piece
 		for (size_t i{ 0 }; i < pieceColors.size(); i++)
 		{

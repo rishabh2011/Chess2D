@@ -23,19 +23,22 @@ public:
 	}
 
 	//Gets color of the pixel at mouse cursor 
-	static glm::vec3 getPixelColorUnderMouse(GLFWwindow* window)
+	static glm::vec3 getPixelColorUnderMouse(GLFWwindow* window, unsigned int colorBuffer)
 	{
 		glm::vec2 position = calcMousePos(window);
 		int width, height;
 		glfwGetWindowSize(window, &width, &height); //Returns current width and height of window
-		float data[3];
+		GLubyte data[3];
+
+		glBindFramebuffer(GL_FRAMEBUFFER, colorBuffer);
 		//y position is from top to bottom hence reverse
-		glReadPixels(position.x, height - position.y, 1, 1, GL_RGB, GL_FLOAT, data);
+		glReadPixels(position.x, height - position.y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		//Convert color values in opengl coordinates to 0-255 range 
 		glm::vec3 color;
-		color.r = (int)(data[0] * 255.0f);
-		color.g = (int)(data[1] * 255.0f);
-		color.b = (int)(data[2] * 255.0f);
+		color.r = static_cast<int>(data[0]);
+		color.g = static_cast<int>(data[1]);
+		color.b = static_cast<int>(data[2]);
 		return color;
 	}
 

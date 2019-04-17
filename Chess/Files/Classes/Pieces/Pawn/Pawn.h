@@ -14,6 +14,7 @@
 #include <Pieces/King/King.h>
 #include <vector>
 #include "PawnPromotion.h"
+#include <UndoMoves.h>
 
 class Pawn : public Pieces
 {
@@ -155,8 +156,13 @@ public:
 		//Loop through the targetSquares vector and draw the target squares
 		for (size_t i = 0; i < availableTargetSquares[selectedPieceIndex].size(); i++)
 		{
+			if (availableTargetSquares[selectedPieceIndex][i].rightEnPassantMove || availableTargetSquares[selectedPieceIndex][i].leftEnPassantMove)
+			{
+				Board::drawTargetSquare(enemySquareColor, availableTargetSquares[selectedPieceIndex][i].position, window, availableTargetSquares[selectedPieceIndex][i].piece,
+					availableTargetSquares[selectedPieceIndex][i].index, isWhite, pieces, false, false, availableTargetSquares[selectedPieceIndex][i].rightEnPassantMove, availableTargetSquares[selectedPieceIndex][i].leftEnPassantMove);
+			}
 			//If an opponent piece exists on target square, draw the square in red
-			if (availableTargetSquares[selectedPieceIndex][i].piece)
+			else if (availableTargetSquares[selectedPieceIndex][i].piece)
 			{
 				Board::drawTargetSquare(enemySquareColor, availableTargetSquares[selectedPieceIndex][i].position, window, availableTargetSquares[selectedPieceIndex][i].piece, availableTargetSquares[selectedPieceIndex][i].index, isWhite);
 			}
@@ -191,11 +197,23 @@ public:
 		}
 	}
 	
+	//Calls TrackMoves function for the same to add this pawn's data to the stack
+	//---------------------------------------------------------------------------
+	virtual void addSelectedPieceDataToOnePieceAffectedMovesStack(bool isWhite, int selectedPieceIndex) override
+	{
+		TrackMoves::addSelectedPieceDataToOnePieceAffectedMovesStack(isWhite, selectedPieceIndex, whitePawnPositions, blackPawnPositions);
+	}
+
 	//Move pawn to the target square
 	//If target square is a pawn promotion square, promote the pawn to a user selected piece
 	//--------------------------------------------------------------------------------------
 	virtual void movePiece(const glm::vec2 &targetSquare, int pieceIndex, float deltaTime, bool isWhite, const std::vector<Pieces*> &pieces, GLFWwindow* window) override
 	{
+		//Draw the selected piece again 
+		//In situations where a kill occurs, this makes sure that the selected piece is always being rendered
+		//On top of the enemy piece and not under it in some situations
+		draw(pieceIndex, isWhite);
+
 		if (promotion.checkPawnPromotion(&targetSquare))
 		{
 			//Do not move pawn until a piece for promotion is selected
@@ -231,6 +249,8 @@ public:
 		Pieces::switchPiecePositions(blackPawnPositions);
 	}
 
+	//Clears the available target squares vector for next iteration
+	//-------------------------------------------------------------
 	virtual void clearAvailableTargetSquares() override
 	{
 		availableTargetSquares.clear();
@@ -305,6 +325,9 @@ public:
 	{
 		if (promotion.getPawnPromoted())
 		{
+			Board::highlightMove.first.first = Board::highlightMovesStack.top().first.first;
+			Board::highlightMove.first.second = Board::highlightMovesStack.top().first.second;
+			Board::highlightMovesStack.pop();
 			for (size_t i = 0; i < pieceOnSquare.size(); i++)
 			{
 				int targetPieceIndex;
@@ -364,6 +387,13 @@ public:
 		}
 	}
 	
+	//Calls TrackMoves function for the same to restore the previous values for this pawn
+	//-----------------------------------------------------------------------------------
+	virtual void restorePreviousMove(PieceAttribs attribs)
+	{
+		TrackMoves::restorePreviousMove(attribs, whitePawnPositions, blackPawnPositions);
+	}
+
 	//Destructor
 	//----------
 	virtual ~Pawn()
@@ -458,10 +488,10 @@ private:
 		//Pawn moves are:
 		//2 diagonal killing moves
 		//2 straight moves, double square move only possible at initial position
-		pawnMoves.push_back(glm::vec2(0.25, 0.25));
-		pawnMoves.push_back(glm::vec2(-0.25, 0.25));
-		pawnMoves.push_back(glm::vec2(0.0, 0.25));
-		pawnMoves.push_back(glm::vec2(0.0, 0.5));
+		pawnMoves.push_back(glm::vec2(squareSizeX, squareSizeY));
+		pawnMoves.push_back(glm::vec2(-squareSizeX, squareSizeY));
+		pawnMoves.push_back(glm::vec2(0.0, squareSizeY));
+		pawnMoves.push_back(glm::vec2(0.0, squareSizeY * 2.0));
 	}
 };
 

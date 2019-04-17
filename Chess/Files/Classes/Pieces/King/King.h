@@ -7,6 +7,7 @@
 #include <Pieces.h>
 #include <Board.h>
 #include <Moves.h>
+#include <UndoMoves.h>
 
 class King : public Pieces
 {
@@ -151,14 +152,20 @@ public:
 		//Loop through the targetSquares vector and draw the target squares
 		for (size_t i = 0; i < availableTargetSquares[selectedPieceIndex].size(); i++)
 		{
+			//If target square is a castling square, draw the square in orange
+			if (availableTargetSquares[selectedPieceIndex][i].castlingKingSideSquare || availableTargetSquares[selectedPieceIndex][i].castlingQueenSideSquare)
+			{
+				Board::drawTargetSquare(castlingSquareColor, availableTargetSquares[selectedPieceIndex][i].position, window, availableTargetSquares[selectedPieceIndex][i].piece,
+				availableTargetSquares[selectedPieceIndex][i].index, isWhite, pieces, availableTargetSquares[selectedPieceIndex][i].castlingKingSideSquare, availableTargetSquares[selectedPieceIndex][i].castlingQueenSideSquare);
+			}
 			//If an opponent piece exists on target square, draw the square in red
-			if (availableTargetSquares[selectedPieceIndex][i].piece)
+			else if (availableTargetSquares[selectedPieceIndex][i].piece)
 			{
 				Board::drawTargetSquare(enemySquareColor, availableTargetSquares[selectedPieceIndex][i].position, window, availableTargetSquares[selectedPieceIndex][i].piece, availableTargetSquares[selectedPieceIndex][i].index, isWhite);
 			}
 			else
 			{
-				Board::drawTargetSquare(targetSquareColor, availableTargetSquares[selectedPieceIndex][i].position, window, availableTargetSquares[selectedPieceIndex][i].piece, availableTargetSquares[selectedPieceIndex][i].index, isWhite);
+				Board::drawTargetSquare(targetSquareColor, availableTargetSquares[selectedPieceIndex][i].position, window, availableTargetSquares[selectedPieceIndex][i].piece,	availableTargetSquares[selectedPieceIndex][i].index, isWhite);
 			}
 			//If user has selected a square for moving then break 
 			if (Board::status == PieceStatus::MOVING)
@@ -172,9 +179,16 @@ public:
 			Board::status = PieceStatus::NOT_SELECTED;
 		}
 	}
-	
+
+	virtual void addSelectedPieceDataToOnePieceAffectedMovesStack(bool isWhite, int selectedPieceIndex) override
+	{
+		TrackMoves::addSelectedPieceDataToOnePieceAffectedMovesStack(isWhite, selectedPieceIndex, whiteKingPositions, blackKingPositions);
+	}
+
 	virtual void movePiece(const glm::vec2 &targetSquare, int pieceIndex, float deltaTime, bool isWhite, const std::vector<Pieces*> &pieces, GLFWwindow* window) override
 	{
+		draw(pieceIndex, isWhite);
+
 		if (isWhite)
 		{
 			moves.movePiece(targetSquare, diffBetweenSquares, pieceIndex, deltaTime, kingMoves, whiteKingPositions);
@@ -182,6 +196,12 @@ public:
 		else
 		{
 			moves.movePiece(targetSquare, diffBetweenSquares, pieceIndex, deltaTime, kingMoves, blackKingPositions);
+		}
+		//Increment this king's move once
+		if (!kingMoveIncremented)
+		{
+			incrementKingMove(isWhite);
+			kingMoveIncremented = true;
 		}
 	}
 
@@ -241,6 +261,11 @@ public:
 		}
 	}
 
+	virtual void restorePreviousMove(PieceAttribs attribs)
+	{
+		TrackMoves::restorePreviousMove(attribs, whiteKingPositions, blackKingPositions);
+	}
+
 	//Get position of king
 	//--------------------
 	static const glm::vec2 &getKingPosition(bool isWhite)
@@ -271,7 +296,9 @@ private:
 	
 	Moves moves;
 	std::vector<glm::vec2> kingMoves;
-
+	bool kingMoveIncremented{ false };
+		
+	glm::vec3 castlingSquareColor{ 1.0, 0.5, 0.0 };
 	glm::vec3 targetSquareColor{ 0.0, 0.8, 1.0 };
 	glm::vec3 enemySquareColor{ 1.0, 0.0, 0.0 };
 	
@@ -284,6 +311,7 @@ private:
 
 	virtual void setupPieceOnSquareValues() override
 	{
+		kingMoveIncremented = false;
 		PieceAttribs square;
 		for (size_t i = 0; i < whiteKingPositions.size(); i++)
 		{
@@ -311,10 +339,10 @@ private:
 	void setKingMoves()
 	{
 		//King can move in all 8 directions but only 1 square
-		kingMoves.push_back(glm::vec2(0.25, 0.0));
-		kingMoves.push_back(glm::vec2(0.0, 0.25));
-		kingMoves.push_back(glm::vec2(0.25, 0.25));
-		kingMoves.push_back(glm::vec2(-0.25, 0.25));
+		kingMoves.push_back(glm::vec2(squareSizeX, 0.0));
+		kingMoves.push_back(glm::vec2(0.0, squareSizeY));
+		kingMoves.push_back(glm::vec2(squareSizeX, squareSizeY));
+		kingMoves.push_back(glm::vec2(-squareSizeX, squareSizeY));
 		kingMoves.push_back(-kingMoves[0]);
 		kingMoves.push_back(-kingMoves[1]);
 		kingMoves.push_back(-kingMoves[2]);

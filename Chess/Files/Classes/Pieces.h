@@ -6,6 +6,7 @@
 
 #include <Graphics.h>
 #include <vector>
+#include <stack>
 
 //Need the enum as class interdependency errors occur when #including queen, bishop, rook in kingRules class
 enum class Piece {PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING};
@@ -16,24 +17,48 @@ class Pieces;
 struct PieceAttribs
 {
 	glm::vec2 position;
-	int index;  //piece index within its vector
+	int index = -1;  //piece index within its vector
 	bool isWhite; //piece white or black
-	Pieces *piece;
+	Pieces *piece = nullptr;
 	Piece pieceEnum;  //piece type
-	bool attackingOpponentKing = false;  
+	bool attackingOpponentKing = false; 
+
+	//Castling booleans
+	bool castlingKingSideSquare = false;
+	bool castlingQueenSideSquare = false;
+
+	//EnPassant booleans
+	bool rightEnPassantMove = false;
+	bool leftEnPassantMove = false;
+};
+
+//Data related to newly generated piece at pawn promotion
+struct PromotedPieceAttribs
+{
+	Pieces* promotedPiece;
+	bool isWhite;
 };
 
 class Pieces
 {
-
 public:
-	//Board square positions array
+
 	static std::vector<PieceAttribs> pieceOnSquare;  //stores the position of all the pieces on the board
 	static std::vector<PieceAttribs> squaresAttacked; //stores the squares attacked by opponent pieces
+
+	//Board square variables
 	static std::vector<glm::vec2> squarePositions;
 	static std::vector<glm::vec3> squareColors;
+
+	//King attacked variables
 	static bool kingAttacked;
 	static int kingAttackingPieces;  //Store total attacking pieces. If attacking pieces are more than 1, only king is allowed to move
+
+	//Variables used to check possibility of castling
+	static int whiteKingMoved;
+	static int blackKingMoved;
+	static std::vector<int> whiteRookMoved;
+	static std::vector<int> blackRookMoved;
 	
 	//-----------------
 	//Virtual Functions
@@ -53,6 +78,8 @@ public:
 			
 	virtual const glm::vec2& getPiecePosition(int index, bool isWhite) const = 0;
 
+	virtual void addSelectedPieceDataToOnePieceAffectedMovesStack(bool isWhite, int selectedPieceIndex) = 0;
+
 	virtual void movePiece(const glm::vec2 &targetSquare, int pieceIndex, float deltaTime, bool isWhite, const std::vector<Pieces*> &pieces, GLFWwindow* window) = 0;
 
 	virtual void switchPiecePositions() = 0;
@@ -62,6 +89,13 @@ public:
 	virtual void calcDifferenceBetweenSquares(const glm::vec2 &targetSquare, int index, bool isWhite) = 0;
 
 	virtual void clearAvailableTargetSquares() = 0;
+
+	virtual void restorePreviousMove(PieceAttribs attrib) = 0;
+
+	virtual void deletePromotedPiece(bool isWhite)
+	{
+
+	}
 	
 	//Draws king square as red if in check
 	//Only overriden in king class
@@ -71,6 +105,21 @@ public:
 
 	}
 
+	//Adds the apropriate castled rook's data to the twoPiecesAffectedMoves stack
+	//---------------------------------------------------------------------------
+	virtual void addCastledRookDataToTwoPiecesAffectedMovesStack(bool isWhite, bool castlingKingSide, bool castlingQueenSide)
+	{
+
+	}
+	
+	//Determines which rook to move for castling and moves that rook
+	//Only override in rook class
+	//--------------------------------------------------------------
+	virtual void moveCastlingRook(bool isWhite, float deltaTime, const std::vector<Pieces*> &pieces, GLFWwindow* window)
+	{
+
+	}
+	   
 	//----------------
 	//Normal functions
 	//----------------
@@ -148,6 +197,71 @@ public:
 		}
 		return -1;
 	}
+
+	//Increment Rook Moves
+	//--------------------
+	static void incrementRookMove(int pieceIndex, bool isWhite)
+	{
+		//Only increment for 0 and 1 pieceIndex as 
+		//1 : pieceIndex will cause out of range exception 
+		//2 : not required to track move number for generated piece. That piece cannot castle
+		if (pieceIndex <= 1)
+		{
+			if (isWhite)
+			{
+				whiteRookMoved[pieceIndex]++;
+			}
+			else
+			{
+				blackRookMoved[pieceIndex]++;
+			}
+		}
+	}
+
+	//Decrement Rook Moves
+	//--------------------
+	static void decrementRookMove(int pieceIndex, bool isWhite)
+	{
+		if (pieceIndex <= 1)
+		{
+			if (isWhite)
+			{
+				whiteRookMoved[pieceIndex]--;
+			}
+			else
+			{
+				blackRookMoved[pieceIndex]--;
+			}
+		}
+	}
+	
+	//Increment King Moves
+	//--------------------
+	static void incrementKingMove(bool isWhite)
+	{
+		if (isWhite)
+		{
+			whiteKingMoved++;
+		}
+		else
+		{
+			blackKingMoved++;
+		}
+	}
+
+	//Decrement King Moves
+	//--------------------
+	static void decrementKingMove(bool isWhite)
+	{
+		if (isWhite)
+		{
+			whiteKingMoved--;
+		}
+		else
+		{
+			blackKingMoved--;
+		}
+	}
 	
 	virtual ~Pieces() = default;
 };
@@ -158,6 +272,10 @@ std::vector<glm::vec3> Pieces::squareColors{};
 std::vector<PieceAttribs> Pieces::squaresAttacked{};
 bool Pieces::kingAttacked = false;
 int Pieces::kingAttackingPieces{ 0 };
+int Pieces::whiteKingMoved{ 0 };
+int Pieces::blackKingMoved{ 0 };
+std::vector<int> Pieces::whiteRookMoved{ 0, 0 };
+std::vector<int> Pieces::blackRookMoved{ 0, 0 };
 
 #endif
 

@@ -8,6 +8,7 @@
 #include <Board.h>
 #include <Pieces/King/King.h>
 #include <Moves.h>
+#include <UndoMoves.h>
 
 class Bishop : public Pieces
 {
@@ -143,8 +144,15 @@ public:
 		}
 	}
 		
+	virtual void addSelectedPieceDataToOnePieceAffectedMovesStack(bool isWhite, int selectedPieceIndex) override
+	{
+		TrackMoves::addSelectedPieceDataToOnePieceAffectedMovesStack(isWhite, selectedPieceIndex, whiteBishopPositions, blackBishopPositions);
+	}
+
 	virtual void movePiece(const glm::vec2 &targetSquare, int pieceIndex, float deltaTime, bool isWhite, const std::vector<Pieces*> &pieces, GLFWwindow* window) override
 	{
+		draw(pieceIndex, isWhite);
+
 		if (isWhite)
 		{
 			moves.movePiece(targetSquare, diffBetweenSquares, pieceIndex, deltaTime, bishopMoves, whiteBishopPositions);
@@ -215,18 +223,25 @@ public:
 	{
 		if (isWhite)
 		{
-			//Add a new bishop to the bishop position vector 
+			//Add a new Bishop to the Bishop position vector 
 			whiteBishopPositions.push_back(*targetSquare);
-			//Also generate a new color for the new bishop
+			//Also generate a new color for the new Bishop
 			whiteBishopColors.push_back(Graphics::genRandomColor());
+			Board::highlightMove.second.index = whiteBishopPositions.size() - 1;
+			Board::highlightMove.second.piece = this;
 		}
 		else
 		{
-			//Add a new bishop to the bishop position vector 
+			//Add a new Bishop to the Bishop position vector 
 			blackBishopPositions.push_back(*targetSquare);
-			//Also generate a new color for the new bishop
+			//Also generate a new color for the new Bishop
 			blackBishopColors.push_back(Graphics::genRandomColor());
+			Board::highlightMove.second.index = whiteBishopPositions.size() - 1;
+			Board::highlightMove.second.piece = this;
 		}
+		TrackMoves::addPromotedPieceDataToThreePiecesAffectedMovesStack(isWhite, this);
+		Board::highlightMove.second.isWhite = isWhite;
+		Board::highlightMovesStack.push(Board::highlightMove);
 	}
 
 	virtual void calcDifferenceBetweenSquares(const glm::vec2 &targetSquare, int index, bool isWhite) override
@@ -241,6 +256,18 @@ public:
 		}
 	}
 
+	virtual void restorePreviousMove(PieceAttribs attribs)
+	{
+		TrackMoves::restorePreviousMove(attribs, whiteBishopPositions, blackBishopPositions);
+	}
+
+	virtual void deletePromotedPiece(bool isWhite) override
+	{
+		TrackMoves::deleteGeneratedPiece(isWhite, whiteBishopPositions, blackBishopPositions);
+	}
+
+	//Returns the bishop texture used in the pawnPromotion UI
+	//-------------------------------------------------------
 	static unsigned int getBishopTexture(bool isWhite)
 	{
 		if (isWhite)
@@ -311,10 +338,10 @@ private:
 		//Bishop can move diagonally in 4 directions for a maximum of 7 squares
 		for (int i = 0; i < 7; i++)
 		{
-			bishopMoves.push_back(glm::vec2((i + 1) * 0.25, (i + 1) * 0.25));
-			bishopMoves.push_back(-glm::vec2((i + 1) * 0.25, (i + 1) * 0.25));
-			bishopMoves.push_back(glm::vec2((i + 1) * 0.25, -((i + 1) * 0.25)));
-			bishopMoves.push_back(-glm::vec2((i + 1) * 0.25, -((i + 1) * 0.25)));
+			bishopMoves.push_back(glm::vec2((i + 1) * squareSizeX, (i + 1) * squareSizeY));
+			bishopMoves.push_back(-glm::vec2((i + 1) * squareSizeX, (i + 1) * squareSizeY));
+			bishopMoves.push_back(glm::vec2((i + 1) * squareSizeX, -((i + 1) * squareSizeY)));
+			bishopMoves.push_back(-glm::vec2((i + 1) * squareSizeX, -((i + 1) * squareSizeY)));
 		}
 	}
 };
