@@ -301,7 +301,7 @@ public:
 			if (pawnPositions[pieceIndex] == Pieces::pieceOnSquare[i].position)
 			{
 				//"Remove" the piece from the board by giving it an arbitrary value outside the board
-				Pieces::pieceOnSquare[i].position = glm::vec2(2.0, 2.0);
+				Pieces::pieceOnSquare[i].position = glm::vec2(100.0, 100.0);
 				break;
 			}
 		}

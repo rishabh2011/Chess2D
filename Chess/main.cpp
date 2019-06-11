@@ -6,9 +6,8 @@
 void initLibraries();
 void initGLFW();
 GLFWwindow* createGLFWwindow();
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
-//Output Windowasd
+//Output Window
 GLFWwindow* window;
 
 int main()
@@ -46,12 +45,6 @@ GLFWwindow* createGLFWwindow()
 		glfwTerminate();
 	}
 	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	return window;
-}
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-	glViewport(0, 0, width, height);
 }
 

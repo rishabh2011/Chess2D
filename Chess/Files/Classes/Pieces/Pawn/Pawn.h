@@ -60,11 +60,19 @@ public:
 			}
 			else
 			{
+				if (Board::AIEnabled)
+				{
+					reversePawnMoves();
+				}
 				for (size_t i{ 0 }; i < blackPawnPositions.size(); i++)
 				{
 					moves.calcPawnTargetSquares(targetSquares, i, pawnMoves, blackPawnPositions, initPawnPositions, isWhite, pieces);
 					availableTargetSquares.push_back(targetSquares);
 					targetSquares.clear();
+				}
+				if (Board::AIEnabled)
+				{
+					reversePawnMoves();
 				}
 			}
 		}
@@ -76,17 +84,26 @@ public:
 			reversePawnMoves();
 			if (isWhite)
 			{
+				if (Board::AIEnabled)
+				{
+					reversePawnMoves();
+				}
 				for (size_t i{ 0 }; i < whitePawnPositions.size(); i++)
 				{
-					moves.calcPawnAttackedSquares(targetSquares, i, pawnMoves, whitePawnPositions, isWhite, King::getKingPosition(!isWhite));
+					moves.calcPawnAttackedSquares(this, targetSquares, i, pawnMoves, whitePawnPositions, isWhite, King::getKingPosition(!isWhite));
+				}
+				if (Board::AIEnabled)
+				{
+					reversePawnMoves();
 				}
 			}
 			else
 			{
 				for (size_t i{ 0 }; i < blackPawnPositions.size(); i++)
 				{
-					moves.calcPawnAttackedSquares(targetSquares, i, pawnMoves, blackPawnPositions, isWhite, King::getKingPosition(!isWhite));
+					moves.calcPawnAttackedSquares(this, targetSquares, i, pawnMoves, blackPawnPositions, isWhite, King::getKingPosition(!isWhite));
 				}
+				
 			}
 			squaresAttacked.insert(squaresAttacked.end(), targetSquares.begin(), targetSquares.end());
 			reversePawnMoves();
@@ -146,6 +163,33 @@ public:
 		{
 			Pieces::drawPiecesColor(&whitePawn, whitePawnPositions, whitePawnColors, 0, whitePawnPositions.size() - 1);
 			Pieces::drawPiecesColor(&blackPawn, blackPawnPositions, blackPawnColors, 0, blackPawnPositions.size() - 1);
+		}
+	}
+
+	//Draws the check mating pieces in pink
+	virtual void drawCheckMatingPieces(int index, bool isWhite) const override
+	{
+		if (isWhite)
+		{
+			//Get square index of the piece and color that square in pink
+			int squareIndex = Board::getSquareIndex(whitePawnPositions[index]);
+			if (squareIndex != -1)
+			{
+				Graphics::drawBoard(Graphics::getPiecesColorShader(), &Board::getTexture(), squarePositions, squareIndex, squareIndex, 1.0, true, glm::vec3(1.0, 0.5, 0.6));
+			}
+			//Finally draw the piece back on top
+			draw(index, isWhite);
+		}
+		else
+		{
+			//Get square index of the king and color that square in red
+			int squareIndex = Board::getSquareIndex(blackPawnPositions[index]);
+			if (squareIndex != -1)
+			{
+				Graphics::drawBoard(Graphics::getPiecesColorShader(), &Board::getTexture(), squarePositions, squareIndex, squareIndex, 1.0, true, glm::vec3(1.0, 0.5, 0.6));
+			}
+			//Finally draw the king back on top
+			draw(index, isWhite);
 		}
 	}
 
@@ -255,6 +299,23 @@ public:
 	{
 		availableTargetSquares.clear();
 	}
+
+	virtual std::vector<std::vector<PieceAttribs>> &getAvailableTargetSquares() override
+	{
+		return availableTargetSquares;
+	}
+
+	//Returns the size of availableTargetSquares
+	//------------------------------------------
+	virtual unsigned int getPiecesTargetSquaresSize() override
+	{
+		int targetSquaresSize = 0;
+		for (size_t i{ 0 }; i < availableTargetSquares.size(); i++)
+		{
+			targetSquaresSize += availableTargetSquares[i].size();
+		}
+		return targetSquaresSize;
+	}
 		
 	//Get the index of the piece based on the color of the pixel under mouse color and draw that piece's outline
 	//----------------------------------------------------------------------------------------------------------
@@ -285,22 +346,22 @@ public:
 		{
 			if (isWhite)
 			{
-				whitePawnPositions[index] = glm::vec2(2.0, 2.0);
+				whitePawnPositions[index] = glm::vec2(100.0, 100.0);
 			}
 			else
 			{
-				blackPawnPositions[index] = glm::vec2(2.0, 2.0);
+				blackPawnPositions[index] = glm::vec2(100.0, 100.0);
 			}
 		}
 		else
 		{
 			if (isWhite)
 			{
-				blackPawnPositions[index] = glm::vec2(2.0, 2.0);
+				blackPawnPositions[index] = glm::vec2(100.0, 100.0);
 			}
 			else
 			{
-				whitePawnPositions[index] = glm::vec2(2.0, 2.0);
+				whitePawnPositions[index] = glm::vec2(100.0, 100.0);
 			}
 		}
 	}
@@ -316,6 +377,32 @@ public:
 		else
 		{
 			return blackPawnPositions[index];
+		}
+	}
+
+	virtual const std::vector<glm::vec2>& getWhitePiecePositions() const override
+	{
+		return whitePawnPositions;
+	}
+
+	virtual const std::vector<glm::vec2>& getBlackPiecePositions() const override
+	{
+		return blackPawnPositions;
+	}
+
+	virtual void setWhitePiecePositions(std::vector<glm::vec2> whitePositions) override
+	{
+		for (size_t i{ 0 }; i < whitePawnPositions.size(); i++)
+		{
+			whitePawnPositions[i] = whitePositions[i];
+		}
+	}
+
+	virtual void setBlackPiecePositions(std::vector<glm::vec2> blackPositions) override
+	{
+		for (size_t i{ 0 }; i < blackPawnPositions.size(); i++)
+		{
+			blackPawnPositions[i] = blackPositions[i];
 		}
 	}
 

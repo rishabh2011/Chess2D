@@ -34,6 +34,9 @@
     <Filter Include="Header Files\Pieces\King">
       <UniqueIdentifier>{ccf9715f-2614-4189-ac9a-23e90d9a6ee6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\AI">
+      <UniqueIdentifier>{03588b96-e7d8-42b8-ad36-f7e89eed5643}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glad.c">
@@ -112,6 +115,9 @@
     </ClInclude>
     <ClInclude Include="UndoMoves.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Files\Classes\AI\AI.h">
+      <Filter>Header Files\AI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

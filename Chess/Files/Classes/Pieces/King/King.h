@@ -60,14 +60,14 @@ public:
 			{
 				for (size_t i{ 0 }; i < whiteKingPositions.size(); i++)
 				{
-					moves.calcKingAttackedSquares(targetSquares, i, kingMoves, whiteKingPositions, isWhite);
+					moves.calcKingAttackedSquares(this, targetSquares, i, kingMoves, whiteKingPositions, isWhite);
 				}
 			}
 			else
 			{
 				for (size_t i{ 0 }; i < blackKingPositions.size(); i++)
 				{
-					moves.calcKingAttackedSquares(targetSquares, i, kingMoves, blackKingPositions, isWhite);
+					moves.calcKingAttackedSquares(this, targetSquares, i, kingMoves, blackKingPositions, isWhite);
 				}
 			}
 			squaresAttacked.insert(squaresAttacked.end(), targetSquares.begin(), targetSquares.end());
@@ -147,6 +147,33 @@ public:
 		}
 	}
 
+	//Draws the check mating pieces in pink
+	virtual void drawCheckMatingPieces(int index, bool isWhite) const override
+	{
+		if (isWhite)
+		{
+			//Get square index of the piece and color that square in pink
+			int squareIndex = Board::getSquareIndex(whiteKingPositions[index]);
+			if (squareIndex != -1)
+			{
+				Graphics::drawBoard(Graphics::getPiecesColorShader(), &Board::getTexture(), squarePositions, squareIndex, squareIndex, 1.0, true, glm::vec3(1.0, 0.5, 0.6));
+			}
+			//Finally draw the piece back on top
+			draw(index, isWhite);
+		}
+		else
+		{
+			//Get square index of the king and color that square in red
+			int squareIndex = Board::getSquareIndex(blackKingPositions[index]);
+			if (squareIndex != -1)
+			{
+				Graphics::drawBoard(Graphics::getPiecesColorShader(), &Board::getTexture(), squarePositions, squareIndex, squareIndex, 1.0, true, glm::vec3(1.0, 0.5, 0.6));
+			}
+			//Finally draw the king back on top
+			draw(index, isWhite);
+		}
+	}
+
 	virtual void drawMoves(GLFWwindow* window, int selectedPieceIndex, bool isWhite, const std::vector<Pieces*> &pieces) override
 	{
 		//Loop through the targetSquares vector and draw the target squares
@@ -216,6 +243,23 @@ public:
 		availableTargetSquares.clear();
 	}
 
+	virtual std::vector<std::vector<PieceAttribs>> &getAvailableTargetSquares() override
+	{
+		return availableTargetSquares;
+	}
+
+	//Returns the size of availableTargetSquares
+	//------------------------------------------
+	virtual unsigned int getPiecesTargetSquaresSize() override
+	{
+		int targetSquaresSize = 0;
+		for (size_t i{ 0 }; i < availableTargetSquares.size(); i++)
+		{
+			targetSquaresSize += availableTargetSquares[i].size();
+		}
+		return targetSquaresSize;
+	}
+
 	virtual int drawPieceOutline(const glm::vec3* color, bool isWhite) const override
 	{
 		int val;
@@ -244,6 +288,31 @@ public:
 		else
 		{
 			return blackKingPositions[index];
+		}
+	}
+	virtual const std::vector<glm::vec2>& getWhitePiecePositions() const override
+	{
+		return whiteKingPositions;
+	}
+
+	virtual const std::vector<glm::vec2>& getBlackPiecePositions() const override
+	{
+		return blackKingPositions;
+	}
+
+	virtual void setWhitePiecePositions(std::vector<glm::vec2> whitePositions) override
+	{
+		for (size_t i{ 0 }; i < whiteKingPositions.size(); i++)
+		{
+			whiteKingPositions[i] = whitePositions[i];
+		}
+	}
+
+	virtual void setBlackPiecePositions(std::vector<glm::vec2> blackPositions) override
+	{
+		for (size_t i{ 0 }; i < blackKingPositions.size(); i++)
+		{
+			blackKingPositions[i] = blackPositions[i];
 		}
 	}
 

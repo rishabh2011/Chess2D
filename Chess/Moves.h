@@ -11,6 +11,7 @@
 #include "Files/Classes/Pieces/Bishop/BishopRules.h"
 #include "Files/Classes/Pieces/Queen/QueenRules.h"
 #include "Files/Classes/Pieces/King/KingRules.h"
+#include <Board.h>
 
 class Moves
 {
@@ -67,11 +68,14 @@ public:
 		//Pawns are switched when black
 		//There is index mismatching as only 1 initPawnPositions vector is stored
 		//Hence reverse x values so that indexes match for black pieces
-		if (!isWhite)
+		if (!Board::AIEnabled)
 		{
-			for (size_t i = 0; i < initPawnPositions.size(); i++)
+			if (!isWhite)
 			{
-				initPawnPositions[i].x = -initPawnPositions[i].x;
+				for (size_t i = 0; i < initPawnPositions.size(); i++)
+				{
+					initPawnPositions[i].x = -initPawnPositions[i].x;
+				}
 			}
 		}
 		PieceAttribs squares;
@@ -402,49 +406,35 @@ public:
 	//These functions calculate the squares attacked by the opponent pieces
 	//---------------------------------------------------------------------
 
-	void calcPawnAttackedSquares(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, const std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
+	void calcPawnAttackedSquares(Pieces* piece, std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, const std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
 	{
 		PieceAttribs squares;
 		for (size_t i = 0; i < moves.size(); i++)
 		{
-			enemyPiece = nullptr;
 			glm::vec2 targetSquare = positions[pieceIndex] + moves[i];
 			if (pawnRules.attackingSquare(targetSquare, pieceIndex, positions, isWhite, kingPosition))
 			{
-				for (size_t i = 0; i < Pieces::pieceOnSquare.size(); i++)
-				{
-					if (targetSquare == Pieces::pieceOnSquare[i].position)
-					{
-						squares.index = Pieces::pieceOnSquare[i].index;
-					}
-				}
+				squares.index = pieceIndex;
 				squares.position = targetSquare;
-				squares.piece = enemyPiece;
+				squares.piece = piece;
 				targetSquares.push_back(squares);
 			}
 		}
 		pawnRules.setPieceBlockingMovement(false);
 	}
 
-	void calcRookAttackedSquares(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
+	void calcRookAttackedSquares(Pieces* piece, std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
 	{
 		bool kingAttacked = false;
 		PieceAttribs squares;
 		for (size_t i = 0; i < moves.size(); i++)
 		{
-			enemyPiece = nullptr;
 			glm::vec2 targetSquare = positions[pieceIndex] + moves[i];
 			if (rookRules.attackingSquare(targetSquare, pieceIndex, positions, isWhite, kingPosition, kingAttacked))
 			{
-				for (size_t i = 0; i < Pieces::pieceOnSquare.size(); i++)
-				{
-					if (targetSquare == Pieces::pieceOnSquare[i].position)
-					{
-						squares.index = Pieces::pieceOnSquare[i].index;
-					}
-				}
+				squares.index = pieceIndex;
 				squares.position = targetSquare;
-				squares.piece = enemyPiece;
+				squares.piece = piece;
 				targetSquares.push_back(squares);
 			}
 		}
@@ -455,48 +445,34 @@ public:
 		rookRules.setDefaultPieceBlockValues(false);
 	}
 
-	void calcKnightAttackedSquares(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
+	void calcKnightAttackedSquares(Pieces* piece, std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
 	{
 		PieceAttribs squares;
 		for (size_t i = 0; i < moves.size(); i++)
 		{
-			enemyPiece = nullptr;
 			glm::vec2 targetSquare = positions[pieceIndex] + moves[i];
 			if (knightRules.attackingSquare(targetSquare, pieceIndex, positions, isWhite, kingPosition))
 			{
-				for (size_t i = 0; i < Pieces::pieceOnSquare.size(); i++)
-				{
-					if (targetSquare == Pieces::pieceOnSquare[i].position)
-					{
-						squares.index = Pieces::pieceOnSquare[i].index;
-					}
-				}
+				squares.index = pieceIndex;
 				squares.position = targetSquare;
-				squares.piece = enemyPiece;
+				squares.piece = piece;
 				targetSquares.push_back(squares);
 			}
 		}
 	}
 
-	void calcBishopAttackedSquares(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
+	void calcBishopAttackedSquares(Pieces* piece, std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
 	{
 		bool kingAttacked = false;
 		PieceAttribs squares;
 		for (size_t i = 0; i < moves.size(); i++)
 		{
-			enemyPiece = nullptr;
 			glm::vec2 targetSquare = positions[pieceIndex] + moves[i];
 			if (bishopRules.attackingSquare(targetSquare, pieceIndex, positions, isWhite, kingPosition, kingAttacked))
 			{
-				for (size_t i = 0; i < Pieces::pieceOnSquare.size(); i++)
-				{
-					if (targetSquare == Pieces::pieceOnSquare[i].position)
-					{
-						squares.index = Pieces::pieceOnSquare[i].index;
-					}
-				}
+				squares.index = pieceIndex;
 				squares.position = targetSquare;
-				squares.piece = enemyPiece;
+				squares.piece = piece;
 				targetSquares.push_back(squares);
 			}
 		}
@@ -507,25 +483,18 @@ public:
 		bishopRules.setDefaultBlockValues(false);
 	}
 
-	void calcQueenAttackedSquares(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
+	void calcQueenAttackedSquares(Pieces* piece, std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite, const glm::vec2 &kingPosition)
 	{
 		bool kingAttacked = false;
 		PieceAttribs squares;
 		for (size_t i = 0; i < moves.size(); i++)
 		{
-			enemyPiece = nullptr;
 			glm::vec2 targetSquare = positions[pieceIndex] + moves[i];
 			if (queenRules.attackingSquare(targetSquare, pieceIndex, positions, isWhite, kingPosition, kingAttacked))
 			{
-				for (size_t i = 0; i < Pieces::pieceOnSquare.size(); i++)
-				{
-					if (targetSquare == Pieces::pieceOnSquare[i].position)
-					{
-						squares.index = Pieces::pieceOnSquare[i].index;
-					}
-				}
+				squares.index = pieceIndex;
 				squares.position = targetSquare;
-				squares.piece = enemyPiece;
+				squares.piece = piece;
 				targetSquares.push_back(squares);
 			}
 		}
@@ -536,24 +505,17 @@ public:
 		queenRules.setDefaultBlockValues(false);
 	}
 
-	void calcKingAttackedSquares(std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite)
+	void calcKingAttackedSquares(Pieces* piece, std::vector<PieceAttribs> &targetSquares, int pieceIndex, std::vector<glm::vec2> &moves, std::vector<glm::vec2> &positions, bool isWhite)
 	{
 		PieceAttribs squares;
 		for (size_t i = 0; i < moves.size(); i++)
 		{
-			enemyPiece = nullptr;
 			glm::vec2 targetSquare = positions[pieceIndex] + moves[i];
 			if (kingRules.attackingSquare(targetSquare, isWhite))
 			{
-				for (size_t i = 0; i < Pieces::pieceOnSquare.size(); i++)
-				{
-					if (targetSquare == Pieces::pieceOnSquare[i].position)
-					{
-						squares.index = Pieces::pieceOnSquare[i].index;
-					}
-				}
+				squares.index = pieceIndex;
 				squares.position = targetSquare;
-				squares.piece = enemyPiece;
+				squares.piece = piece;
 				targetSquares.push_back(squares);
 			}
 		}

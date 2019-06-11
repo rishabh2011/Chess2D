@@ -568,7 +568,7 @@ PFNGLGETFRAGDATAINDEXPROC glad_glGetFragDataIndex = NULL;
 PFNGLGETFRAGDATALOCATIONPROC glad_glGetFragDataLocation = NULL;
 PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC glad_glGetFramebufferAttachmentParameteriv = NULL;
 PFNGLGETFRAMEBUFFERPARAMETERIVPROC glad_glGetFramebufferParameteriv = NULL;
-PFNGLGETGRAPHICSRESETSTATUSPROC glad_glGetGraphicsResetStatus = NULL;
+PFNGLGETGRAPHICSRESETSTATUSPROC glad_glGetRenderer2DResetStatus = NULL;
 PFNGLGETINTEGER64I_VPROC glad_glGetInteger64i_v = NULL;
 PFNGLGETINTEGER64VPROC glad_glGetInteger64v = NULL;
 PFNGLGETINTEGERI_VPROC glad_glGetIntegeri_v = NULL;
@@ -2399,7 +2399,7 @@ static void load_GL_VERSION_4_5(GLADloadproc load) {
 	glad_glMemoryBarrierByRegion = (PFNGLMEMORYBARRIERBYREGIONPROC)load("glMemoryBarrierByRegion");
 	glad_glGetTextureSubImage = (PFNGLGETTEXTURESUBIMAGEPROC)load("glGetTextureSubImage");
 	glad_glGetCompressedTextureSubImage = (PFNGLGETCOMPRESSEDTEXTURESUBIMAGEPROC)load("glGetCompressedTextureSubImage");
-	glad_glGetGraphicsResetStatus = (PFNGLGETGRAPHICSRESETSTATUSPROC)load("glGetGraphicsResetStatus");
+	glad_glGetRenderer2DResetStatus = (PFNGLGETGRAPHICSRESETSTATUSPROC)load("glGetRenderer2DResetStatus");
 	glad_glGetnCompressedTexImage = (PFNGLGETNCOMPRESSEDTEXIMAGEPROC)load("glGetnCompressedTexImage");
 	glad_glGetnTexImage = (PFNGLGETNTEXIMAGEPROC)load("glGetnTexImage");
 	glad_glGetnUniformdv = (PFNGLGETNUNIFORMDVPROC)load("glGetnUniformdv");

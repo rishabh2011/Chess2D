@@ -6,6 +6,7 @@
 
 #include <Graphics.h>
 #include <vector>
+#include <algorithm>
 #include <stack>
 
 //Need the enum as class interdependency errors occur when #including queen, bishop, rook in kingRules class
@@ -72,12 +73,12 @@ public:
 
 	virtual void drawMoves(GLFWwindow* window, int selectedPieceIndex, bool isWhite, const std::vector<Pieces*> &pieces) = 0;
 
+	virtual void drawCheckMatingPieces(int index, bool isWhite) const = 0;
+
 	virtual void calcTargetSquares(bool isWhite, bool currentPlayer, const std::vector<Pieces*> &pieces = std::vector<Pieces*>{}) = 0;
 	
 	virtual void setupPieceOnSquareValues() = 0;
 			
-	virtual const glm::vec2& getPiecePosition(int index, bool isWhite) const = 0;
-
 	virtual void addSelectedPieceDataToOnePieceAffectedMovesStack(bool isWhite, int selectedPieceIndex) = 0;
 
 	virtual void movePiece(const glm::vec2 &targetSquare, int pieceIndex, float deltaTime, bool isWhite, const std::vector<Pieces*> &pieces, GLFWwindow* window) = 0;
@@ -90,6 +91,20 @@ public:
 
 	virtual void clearAvailableTargetSquares() = 0;
 
+	virtual std::vector<std::vector<PieceAttribs>> &getAvailableTargetSquares() = 0;
+
+	virtual unsigned int getPiecesTargetSquaresSize() = 0;
+
+	virtual const glm::vec2& getPiecePosition(int index, bool isWhite) const = 0;
+	
+	virtual const std::vector<glm::vec2>& getWhitePiecePositions() const = 0;
+	
+	virtual const std::vector<glm::vec2>& getBlackPiecePositions() const = 0;
+
+	virtual void setWhitePiecePositions(std::vector<glm::vec2> whitePositions) = 0;
+
+	virtual void setBlackPiecePositions(std::vector<glm::vec2> blackPositions) = 0;
+	
 	virtual void restorePreviousMove(PieceAttribs attrib) = 0;
 
 	virtual void deletePromotedPiece(bool isWhite)

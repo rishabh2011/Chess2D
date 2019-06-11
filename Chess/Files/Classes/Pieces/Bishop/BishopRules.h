@@ -252,7 +252,7 @@ public:
 		{
 			if (bishopPositions[pieceIndex] == Pieces::pieceOnSquare[i].position)
 			{
-				Pieces::pieceOnSquare[i].position = glm::vec2(2.0, 2.0);
+				Pieces::pieceOnSquare[i].position = glm::vec2(100.0, 100.0);
 				break;
 			}
 		}

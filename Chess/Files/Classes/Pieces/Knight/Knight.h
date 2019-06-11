@@ -59,14 +59,14 @@ public:
 			{
 				for (size_t i{ 0 }; i < whiteKnightPositions.size(); i++)
 				{
-					moves.calcKnightAttackedSquares(targetSquares, i, knightMoves, whiteKnightPositions, isWhite, King::getKingPosition(!isWhite));
+					moves.calcKnightAttackedSquares(this, targetSquares, i, knightMoves, whiteKnightPositions, isWhite, King::getKingPosition(!isWhite));
 				}
 			}
 			else
 			{
 				for (size_t i{ 0 }; i < blackKnightPositions.size(); i++)
 				{
-					moves.calcKnightAttackedSquares(targetSquares, i, knightMoves, blackKnightPositions, isWhite, King::getKingPosition(!isWhite));
+					moves.calcKnightAttackedSquares(this, targetSquares, i, knightMoves, blackKnightPositions, isWhite, King::getKingPosition(!isWhite));
 				}
 			}
 			squaresAttacked.insert(squaresAttacked.end(), targetSquares.begin(), targetSquares.end());
@@ -112,6 +112,33 @@ public:
 		{
 			Pieces::drawPiecesColor(&whiteKnight, whiteKnightPositions, whiteKnightColors, 0, whiteKnightPositions.size() - 1);
 			Pieces::drawPiecesColor(&blackKnight, blackKnightPositions, blackKnightColors, 0, blackKnightPositions.size() - 1);
+		}
+	}
+
+	//Draws the check mating pieces in pink
+	virtual void drawCheckMatingPieces(int index, bool isWhite) const override
+	{
+		if (isWhite)
+		{
+			//Get square index of the piece and color that square in pink
+			int squareIndex = Board::getSquareIndex(whiteKnightPositions[index]);
+			if (squareIndex != -1)
+			{
+				Graphics::drawBoard(Graphics::getPiecesColorShader(), &Board::getTexture(), squarePositions, squareIndex, squareIndex, 1.0, true, glm::vec3(1.0, 0.5, 0.6));
+			}
+			//Finally draw the piece back on top
+			draw(index, isWhite);
+		}
+		else
+		{
+			//Get square index of the king and color that square in red
+			int squareIndex = Board::getSquareIndex(blackKnightPositions[index]);
+			if (squareIndex != -1)
+			{
+				Graphics::drawBoard(Graphics::getPiecesColorShader(), &Board::getTexture(), squarePositions, squareIndex, squareIndex, 1.0, true, glm::vec3(1.0, 0.5, 0.6));
+			}
+			//Finally draw the king back on top
+			draw(index, isWhite);
 		}
 	}
 
@@ -172,6 +199,23 @@ public:
 		availableTargetSquares.clear();
 	}
 
+	virtual std::vector<std::vector<PieceAttribs>> &getAvailableTargetSquares() override
+	{
+		return availableTargetSquares;
+	}
+
+	//Returns the size of availableTargetSquares
+	//------------------------------------------
+	virtual unsigned int getPiecesTargetSquaresSize() override
+	{
+		int targetSquaresSize = 0;
+		for (size_t i{ 0 }; i < availableTargetSquares.size(); i++)
+		{
+			targetSquaresSize += availableTargetSquares[i].size();
+		}
+		return targetSquaresSize;
+	}
+
 	virtual int drawPieceOutline(const glm::vec3* color, bool isWhite) const override
 	{
 		int val;
@@ -203,15 +247,41 @@ public:
 		}
 	}
 
+	virtual const std::vector<glm::vec2>& getWhitePiecePositions() const override
+	{
+		return whiteKnightPositions;
+	}
+
+	virtual const std::vector<glm::vec2>& getBlackPiecePositions() const override
+	{
+		return blackKnightPositions;
+	}
+
+	virtual void setWhitePiecePositions(std::vector<glm::vec2> whitePositions) override
+	{
+		for (size_t i{ 0 }; i < whiteKnightPositions.size(); i++)
+		{
+			whiteKnightPositions[i] = whitePositions[i];
+		}
+	}
+
+	virtual void setBlackPiecePositions(std::vector<glm::vec2> blackPositions) override
+	{
+		for (size_t i{ 0 }; i < blackKnightPositions.size(); i++)
+		{
+			blackKnightPositions[i] = blackPositions[i];
+		}
+	}
+
 	virtual void deletePiecePosition(int index, bool isWhite, bool isPawnPromote = false) override
 	{
 		if (isWhite)
 		{
-			blackKnightPositions[index] = glm::vec2(2.0, 2.0);
+			blackKnightPositions[index] = glm::vec2(100.0, 100.0);
 		}
 		else
 		{
-			whiteKnightPositions[index] = glm::vec2(2.0, 2.0);
+			whiteKnightPositions[index] = glm::vec2(100.0, 100.0);
 		}
 	}
 

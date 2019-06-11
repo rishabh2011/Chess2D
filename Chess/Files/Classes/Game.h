@@ -23,8 +23,7 @@ public:
 		board = new Board;
 		initializePieces();
 	}
-
-
+	
 	//Starts game rendering loop
 	void renderLoop(GLFWwindow* window) 
 	{
@@ -33,7 +32,7 @@ public:
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_STENCIL_TEST);
 		glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
-		
+				
 		while (!glfwWindowShouldClose(window))
 		{
 			float currentFrame = glfwGetTime();
@@ -83,7 +82,7 @@ private:
 		{
 			glfwSetWindowShouldClose(window, true);
 		}
-		else if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+		if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
 		{
 			if (!zPressed)
 			{

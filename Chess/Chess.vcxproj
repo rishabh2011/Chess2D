@@ -133,6 +133,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Files\Classes\AI\AI.h" />
     <ClInclude Include="Files\Classes\Board.h" />
     <ClInclude Include="Files\Classes\Game.h" />
     <ClInclude Include="Files\Classes\Pieces.h" />

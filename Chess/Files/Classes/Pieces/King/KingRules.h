@@ -78,6 +78,7 @@ public:
 		{
 			if (targetSquare == Pieces::squaresAttacked[i].position)
 			{
+				Pieces::squaresAttacked[i].attackingOpponentKing = true;
 				return false;
 			}
 		}

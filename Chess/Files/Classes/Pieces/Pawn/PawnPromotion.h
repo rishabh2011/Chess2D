@@ -183,7 +183,7 @@ private:
 		model = glm::scale(model, glm::vec3(0.9));
 		piecesColorShader->use();
 		piecesColorShader->setMat4("model", model);
-		piecesColorShader->setVec3("color", glm::vec3(1.0, 0.0, 0.0));
+		piecesColorShader->setVec3("color", glm::vec3(0.0, 1.0, 0.0));
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		model = glm::mat4();
 		model = glm::translate(model, glm::vec3(offset, 0.0));
@@ -251,7 +251,7 @@ public:
 		//Render rectangle box
 		shader->use();
 		glBindVertexArray(VAO);
-		shader->setVec4("color", glm::vec4(1.0, 1.0, 1.0, 0.8));
+		shader->setVec4("color", glm::vec4(0.0, 0.5, 1.0, 0.8));
 		shader->setFloat("scale", scale);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 

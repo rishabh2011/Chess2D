@@ -8,6 +8,7 @@
 #include <Mouse.h>
 #include <UndoMoves.h>
 #include <vector>
+#include <AI/AI.h>
 
  //------------
  //Enum classes
@@ -33,6 +34,8 @@ public:
 	static float boardLimitX;
 	static float boardLimitY;
 
+	static bool AIEnabled;
+
 	//Stores old and new square values for the previously played piece as well as the piece data
 	//for highlight purposes
 	static std::pair<std::pair<glm::vec2, glm::vec2>, PieceAttribs> highlightMove;
@@ -55,7 +58,7 @@ public:
 		draw(pieces);
 		//Get the color under mouse cursor
 		glm::vec3 color = Mouse::getPixelColorUnderMouse(window, Graphics::getPiecesColorBuffer());
-		
+
 		if (player == Player::WHITE)
 		{
 			isWhite = true;
@@ -64,7 +67,7 @@ public:
 		{
 			isWhite = false;
 		}
-		
+
 		//If squares not setup
 		if (!squaresSetup)
 		{
@@ -85,30 +88,84 @@ public:
 			}
 			squaresSetup = true;
 		}
-
+		
 		//For king piece, draw in red if checked
 		for (size_t i{ 0 }; i < pieces.size(); i++)
 		{
 			pieces[i]->drawKingInCheck(isWhite);
 		}
 
-		//Perform various operations based on piece status
-		switch (status)
+		for (size_t i{ 0 }; i < pieces.size(); i++)
 		{
-		case PieceStatus::NOT_SELECTED:
-			highlightPreviousMove();
-			drawPiecesOutline(pieces, &color, isWhite);
-			break;
-		case PieceStatus::SELECTED:
-			highlightPreviousMove();
-			pieceSelected(pieces, window, isWhite);
-			break;
-		case PieceStatus::MOVING:
-			movePiece(pieces, window, selectedPieceIndex, deltaTime, isWhite);
-			break;
+			availableTargetSquares += pieces[i]->getPiecesTargetSquaresSize();
+		}
+		//If Checkmate condition satisfied
+		if (availableTargetSquares == 0 && Pieces::kingAttacked)
+		{
+			gameOver(pieces);
+			return;
+		}
+		//If stalemate condition satisfied
+		else if (availableTargetSquares == 0 && !Pieces::kingAttacked)
+		{
+			staleMate();
+			return;
+		}
+				
+		if (!AIEnabled || (AIEnabled && (player == Player::WHITE)))
+		{
+			//Perform various operations based on piece status
+			switch (status)
+			{
+			case PieceStatus::NOT_SELECTED:
+				highlightPreviousMove();
+				drawPiecesOutline(pieces, &color, isWhite);
+				break;
+			case PieceStatus::SELECTED:
+				highlightPreviousMove();
+				pieceSelected(pieces, window, isWhite);
+				break;
+			case PieceStatus::MOVING:
+				movePiece(pieces, window, selectedPieceIndex, deltaTime, isWhite);
+				break;
+			}
+		}
+		else
+		{
+			if (!AI::movePlayed)
+			{
+				AI::playMoveAtRandom(pieces, isWhite);
+				piece = pieces[AI::selectedPiece];
+				selectedPieceIndex = AI::pieceIndex;
+				processPieceMove(AI::move.castlingKingSideSquare, AI::move.castlingQueenSideSquare, AI::move.rightEnPassantMove,
+					AI::move.leftEnPassantMove, pieces, isWhite, AI::move.position, AI::move.piece);
+			}
+			movePiece(pieces, window, AI::pieceIndex, deltaTime, isWhite);
 		}
 	}
 
+	void gameOver(std::vector<Pieces *> & pieces)
+	{
+		for (size_t i{ 0 }; i < Pieces::squaresAttacked.size(); i++)
+		{
+			if (Pieces::squaresAttacked[i].attackingOpponentKing)
+			{
+				Pieces::squaresAttacked[i].piece->drawCheckMatingPieces(Pieces::squaresAttacked[i].index, Pieces::squaresAttacked[i].isWhite);
+			}
+		}
+		for (size_t i{ 0 }; i < Pieces::pieceOnSquare.size(); i++)
+		{
+			if (Pieces::pieceOnSquare[i].attackingOpponentKing)
+			{
+				Pieces::pieceOnSquare[i].piece->drawCheckMatingPieces(Pieces::pieceOnSquare[i].index, Pieces::pieceOnSquare[i].isWhite);
+			}
+		}
+	}
+
+	void staleMate()
+	{
+		std::cout << "Stalemate" << std::endl;
+	}
 
 	//Draw the target square that a piece can move to
 	//-----------------------------------------------
@@ -131,11 +188,6 @@ public:
 
 			//Get the index of the color from the Pieces::squareColors array that matches the pixel color
 			int squareColorIndex = getSquareIndex(color);
-			//If mouse clicked on invalid square
-			if (squareColorIndex == -1)
-			{
-				return;
-			}
 			if (Pieces::squarePositions[squareColorIndex] == targetSquare)
 			{
 				processPieceMove(castlingKingSideSquare, castlingQueenSideSquare, rightEnPassantMove, leftEnPassantMove, pieces, isWhite, targetSquare, enemyPiece);
@@ -238,12 +290,17 @@ public:
 	{
 		//Set status to not selected
 		status = PieceStatus::NOT_SELECTED;
+
 		//Invert piece positions since both players should be able to play the game from the same perspective
 		for (int i = 0; i < pieces.size(); i++)
 		{
-			pieces[i]->switchPiecePositions();
 			pieces[i]->clearAvailableTargetSquares();
+			if (!AIEnabled)
+			{
+				pieces[i]->switchPiecePositions();
+			}
 		}
+		AI::movePlayed = false;
 		squaresSetup = false;
 		Pieces::kingAttacked = false;
 		Pieces::kingAttackingPieces = 0;
@@ -254,6 +311,8 @@ public:
 		castlingQueenSide = false;
 
 		enPassant = false;
+
+		availableTargetSquares = 0;
 	}
 
 	//Restore board state to previous move 
@@ -395,6 +454,7 @@ private:
 	static glm::vec2 enPassantEnemyPieceSquare;
 
 	bool isWhite;
+	static unsigned int availableTargetSquares;
 	
 	//Draw board squares and pieces visible to user
 	//---------------------------------------------
@@ -436,17 +496,36 @@ private:
 		{
 			auto highlightMove = highlightMovesStack.top();
 
-			//Draws the old square value for the piece in yellow
-			squareIndex = getSquareIndex(-highlightMove.first.first);
-			Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 1.0);
-			Graphics::drawBoard(Graphics::getPiecesColorShader(), &lightSquareTexture, Pieces::squarePositions, squareIndex, squareIndex, 0.95, true, glm::vec3(1.0, 1.0, 0.0));
-			Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 0.90);
+			if (!AIEnabled)
+			{
+				//Draws the old square value for the piece in yellow
+				squareIndex = getSquareIndex(-highlightMove.first.first);
+				Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 1.0);
+				Graphics::drawBoard(Graphics::getPiecesColorShader(), &lightSquareTexture, Pieces::squarePositions, squareIndex, squareIndex, 0.95, true, glm::vec3(1.0, 1.0, 1.0));
+				Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 0.90);
 
-			//Draws the new square value for the piece in yellow
-			squareIndex = getSquareIndex(-highlightMove.first.second);
-			Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 1.0);
-			Graphics::drawBoard(Graphics::getPiecesColorShader(), &lightSquareTexture, Pieces::squarePositions, squareIndex, squareIndex, 0.95, true, glm::vec3(1.0, 1.0, 0.0));
-			Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 0.90);
+				//Draws the new square value for the piece in yellow
+				squareIndex = getSquareIndex(-highlightMove.first.second);
+				Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 1.0);
+				Graphics::drawBoard(Graphics::getPiecesColorShader(), &lightSquareTexture, Pieces::squarePositions, squareIndex, squareIndex, 0.95, true, glm::vec3(1.0, 1.0, 1.0));
+				Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 0.90);
+
+			}
+			else
+			{
+				//Draws the old square value for the piece in yellow
+				squareIndex = getSquareIndex(highlightMove.first.first);
+				Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 1.0);
+				Graphics::drawBoard(Graphics::getPiecesColorShader(), &lightSquareTexture, Pieces::squarePositions, squareIndex, squareIndex, 0.95, true, glm::vec3(1.0, 1.0, 1.0));
+				Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 0.90);
+
+				//Draws the new square value for the piece in yellow
+				squareIndex = getSquareIndex(highlightMove.first.second);
+				Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 1.0);
+				Graphics::drawBoard(Graphics::getPiecesColorShader(), &lightSquareTexture, Pieces::squarePositions, squareIndex, squareIndex, 0.95, true, glm::vec3(1.0, 1.0, 1.0));
+				Graphics::drawBoard(Graphics::getBoardShader(), getSquareTexture(squareIndex), Pieces::squarePositions, squareIndex, squareIndex, 0.90);
+	
+			}
 
 			//Draws the piece itself over the new square
 			highlightMove.second.piece->draw(highlightMove.second.index, highlightMove.second.isWhite);
@@ -669,5 +748,8 @@ std::stack<std::pair<std::pair<glm::vec2, glm::vec2>, PieceAttribs>> Board::high
 
 bool Board::enPassant{ false };
 glm::vec2 Board::enPassantEnemyPieceSquare{};
+
+bool Board::AIEnabled{ false };
+unsigned int Board::availableTargetSquares{ 0 };
 
 #endif
